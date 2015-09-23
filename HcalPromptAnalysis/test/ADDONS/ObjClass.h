@@ -118,6 +118,8 @@ public:
   int load(const std::string &fname,
 	   InputRuns_t *inpRunMin=NULL, InputRuns_t *inpRunMax=NULL);
 
+  int prepareRootFileNamesAndTimer(std::vector<std::string> &fnames,
+				   Float_t **timeArr) const;
 
   friend std::ostream& operator<< (std::ostream& out, const InputCards_t &ic);
 };

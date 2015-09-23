@@ -195,6 +195,32 @@ int InputCards_t::load(const std::string &fname,
 
 // ------------------------------------------------------
 
+int InputCards_t::prepareRootFileNamesAndTimer(std::vector<std::string> &fnames,
+					       Float_t **timeArr) const
+{
+  fnames.clear();
+  (*timeArr)=NULL;
+  if (fRunData.size()==0) return 0;
+
+  const Double_t startTime=Double_t(time0.Convert());
+
+  int count=int(fRunData.end()-fRunData.begin());
+  (*timeArr)= new Float_t[count+1];
+
+  for (std::vector<InputRuns_t>::const_iterator it= fRunData.begin();
+       it!=fRunData.end(); it++) {
+    int idx=int( it - fRunData.begin() );
+    TDatime t( it->sqlTimeStr().c_str() );
+    (*timeArr)[idx] = Float_t( Double_t(t.Convert()) - startTime );
+    const char *histoFileNameT="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_HCALCALIB/HCALMONITORING/RDMweb/histos/%s_%d.root";
+    std::string fname=Form(histoFileNameT,fCalibType.c_str(),it->runNo());
+    fnames.push_back(fname);
+  }
+  return int(fnames.size());
+}
+
+// ------------------------------------------------------
+
 std::ostream& operator<<(std::ostream& out, const InputCards_t &ic) {
   out << "InputCards:  " << ic.fCalibType << "\n";
   out << "(from file <" << ic.fFName << ">)\n";

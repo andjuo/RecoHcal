@@ -6,7 +6,7 @@ LIBS=-L ${ROOTSYS}/lib -lCore -lRIO -lNet -lHist -lGraf -lGraf3d -lGpad -lTree -
 
 OBJ=ObjClass.o
 
-default: zamt_hf2.exe
+default: zamt_hf3.exe
 
 zamt_hf.exe: zamt_hf.cc
 	c++ ${CFLAGS} $^ -o $@ ${INCLUDE} ${LIBS}
@@ -14,6 +14,12 @@ zamt_hf.exe: zamt_hf.cc
 zamt_hf2.exe: zamt_hf2.cc ObjClass.o
 	c++ ${CFLAGS} $^ -o $@ ${INCLUDE} ${LIBS}
 
+zamt_hf3.exe: zamt_hf3.cc ObjClass.o HistoDef.o
+	c++ ${CFLAGS} $^ -o $@ ${INCLUDE} ${LIBS}
+
+
+HistoDef.o: HistoDef.cc HistoDef.h ObjClass.o
+	c++ ${CFLAGS} $< -c -o $@ ${INCLUDE}
 
 ObjClass.o: ObjClass.cc ObjClass.h
 	c++ ${CFLAGS} $< -c -o $@ ${INCLUDE}
