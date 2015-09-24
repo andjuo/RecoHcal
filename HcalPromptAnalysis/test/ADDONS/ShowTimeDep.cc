@@ -255,15 +255,27 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 	    }
 	  } // loop over periods (irun)
 
-	  // normalization on 1st time point
+	  // normalization
+	  Float_t norm=avgW[0];
+	  if (1) {
+	    // normalize to the first non-zero point
+	    if (norm<=Float_t(0)) {
+	      for (unsigned int ir=0; ir<numRuns; ir++) {
+		if (avgW[ir]>Float_t(0)) {
+		  norm=avgW[ir];
+		  break;
+		}
+	      }
+	    }
+	  }
 	  for(unsigned int ir = 0; ir<numRuns; ir++) {
-	    if (avgW[0]<=0.) {
+	    if (norm<=0.) {
 	      ratio[ir] = 0;
 	      ratioErr[ir] = 0;
 	    }
 	    else {
-	      ratio[ir] = avgW[ir]/avgW[0];
-	      ratioErr[ir] = avgWErr[ir]/avgW[0];
+	      ratio[ir] = avgW[ir]/norm;
+	      ratioErr[ir] = avgWErr[ir]/norm;
 	    }
 	    std::cout<<"Point2:ir="<<ir<<"  avgW[ir]="<<avgW[ir]<<" avgW[0]="<<avgW[0]<<" ratio[ir]="<<ratio[ir]<<std::endl;
 	  }//
