@@ -40,12 +40,23 @@ typedef enum { _getNone, _getHisto, _getMean, _getLast, _getUnknown }
 
 TString GetMethodName(TMethod_t method, int shortVersion=0);
 TMethod_t GetMethod(TString str);
+void ListMethods(int shortVersion=0);
+void CheckMethodConversion(int shortVersion=0);
 
 TString GetHistoDimName(THistoDim_t hd);
 THistoDim_t GetHistoDim(TString str);
 
 TString GetActionName(TAction_t a);
 TAction_t GetAction(TString str);
+
+// -------------------------------------------------------------
+
+inline TMethod_t nextMethod(TMethod_t m) {
+  if (m<_calcLast) m=TMethod_t(int(m)+1);
+  return m;
+}
+
+inline void next(TMethod_t &m) { m=nextMethod(m); }
 
 // -------------------------------------------------------------
 
@@ -58,19 +69,22 @@ struct HistoDef_t {
   THistoDim_t fHistoDim;
   //TAction_t fAction;
   TH1F *fH1F;
-  TH2F *fH2F, *fH2F_2;
+  TH2F *fH2F, *fH2F_2, *fH2F_ratio;
 public:
   HistoDef_t(TString set_calibtype="LED", TMethod_t set_method=_calcNone, int set_depth=-1);
   HistoDef_t(const HistoDef_t &d, TString cloneTag="");
 
   TString calibType() const { return fCalibType; }
   TMethod_t method() const { return fMethod; }
+  THistoDim_t histoDim() const { return fHistoDim; }
   int depth() const { return fDepth; }
   TString plotTitle() const { return fPlotTitle; }
   TH1F *getHisto() { return fH1F; }
   TH2F *getHisto2F() { return fH2F; }
   TH2F *getHisto2F_2() { return fH2F_2; }
+  TH2F *getHisto2F_ratio() { return fH2F_ratio; }
 
+  // Main methods that initialize the histogram names and the types
   int setMethod(TMethod_t set_method, int set_depth);
   int setMethod(TString reset_calibtype, TMethod_t set_method, int set_depth); // calls setMethod
 

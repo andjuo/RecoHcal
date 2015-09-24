@@ -15,6 +15,7 @@ TString GetMethodName(TMethod_t method, int shortVersion) {
   case _calcRatio: name="Ratio"; break;
   case _calcAvgAmp: name="AvgAmp"; break;
   case _calcAvgTSn: name="AvgTSn"; break;
+  case _calcAvgTSx: name="AvgTSx"; break;
   case _calcAvgWidth: name="AvgWidth"; break;
   case _calcAvgRatio: name="AvgRatio"; break;
   case _calcAvgP0: name="AvgP0"; break;
@@ -77,6 +78,30 @@ TMethod_t GetMethod(TString str) {
     method=_calcUnknown;
   }
   return method;
+}
+
+// -------------------------------------------------------------
+
+void ListMethods(int shortVersion)
+{
+  std::cout << "available methods (as strings): ";
+  for (TMethod_t m=_calcAmp; m!=_calcLast; next(m)) {
+    std::cout << " " << GetMethodName(m,shortVersion);
+  }
+  std::cout << "\n";
+}
+
+// -------------------------------------------------------------
+
+void CheckMethodConversion(int shortVersion)
+{
+  std::cout << "available methods (as strings):\n";
+  for (TMethod_t m=_calcAmp; m!=_calcLast; next(m)) {
+    std::cout << "i=" << (int(m)-int(_calcAmp)) << "\n";
+    std::cout << " " << GetMethodName(m,shortVersion) << "\n";
+    std::cout << " " << GetMethodName(GetMethod(GetMethodName(m,shortVersion)),shortVersion) << "\n";
+  }
+  std::cout << "\n";
 }
 
 // -------------------------------------------------------------
@@ -161,7 +186,7 @@ HistoDef_t::HistoDef_t(TString set_calibtype, TMethod_t set_method, int set_dept
   fInpHistoName("inphisto"),
   fInpHistoName2("inphisto2"),
   fHistoDim(_histo0),
-  fH1F(NULL), fH2F(NULL), fH2F_2(NULL)
+  fH1F(NULL), fH2F(NULL), fH2F_2(NULL), fH2F_ratio(NULL)
 {
   if (set_method != _calcNone) this->setMethod(set_method,set_depth);
   if (set_calibtype.Length()==0) {
@@ -183,7 +208,8 @@ HistoDef_t::HistoDef_t(const HistoDef_t &d, TString cloneTag) :
   fHistoDim(d.fHistoDim),
   fH1F(d.fH1F),
   fH2F(d.fH2F),
-  fH2F_2(d.fH2F_2)
+  fH2F_2(d.fH2F_2),
+  fH2F_ratio(d.fH2F_ratio)
 {
   if (cloneTag.Length()) {
     TString hname;
@@ -198,6 +224,10 @@ HistoDef_t::HistoDef_t(const HistoDef_t &d, TString cloneTag) :
     if (d.fH2F_2) {
       hname=TString(d.fH2F_2->GetName()) + cloneTag;
       fH2F_2=(TH2F*)d.fH2F_2->Clone(hname);
+    }
+    if (d.fH2F_ratio) {
+      hname=TString(d.fH2F_ratio->GetName()) + cloneTag;
+      fH2F_ratio=(TH2F*)d.fH2F_ratio->Clone(hname);
     }
   }
 }
@@ -367,7 +397,7 @@ int HistoDef_t::loadHisto(TFile &f, TString setTag)
     std::cout << "HistoDef_t::loadHisto: file <" << f.GetName() << "> is not open\n";
     return 0;
   }
-  fH1F=NULL; fH2F=NULL; fH2F_2=NULL;
+  fH1F=NULL; fH2F=NULL; fH2F_2=NULL; fH2F_ratio=NULL;
 
   if (fHistoDim==_histo1F) {
     fH1F=(TH1F*)f.Get(fInpHistoName);
@@ -425,6 +455,18 @@ int HistoDef_t::loadHisto(TFile &f, TString setTag)
 	return 0;
       }
     }
+    fH2F->SetDirectory(0);
+
+    if (fH2F && fH2F_2) {
+      fH2F_ratio= (TH2F*)fH2F->Clone(TString("Ceff_") + fH2F->GetName());
+      if (!fH2F_ratio) {
+	std::cout << "HistoDef_t::loadHisto: failed to clone fH2F for fH2F_ratio\n";
+	return 0;
+      }
+      fH2F_ratio->Divide(fH2F, fH2F_2, 1, 1, "B");
+      fH2F_ratio->SetDirectory(0);
+    }
+
     return 1;
   }
   std::cout << "HistoDef_t::loadHisto error: object is not prepared\n";
@@ -523,7 +565,6 @@ TCanvas *MakePlotHD(HistoDef_t inpHD, const InputCards_t &ic)
   //
 
   // Load histograms
-  std::vector<HistoDef_t*> hdV;
   std::vector<TH1F*> h1fV;
   std::vector<TH2F*> h2fV;
   std::vector<TH2F*> h2f2V;
@@ -542,6 +583,7 @@ TCanvas *MakePlotHD(HistoDef_t inpHD, const InputCards_t &ic)
       h2fV.push_back(inpHD.getHisto2F());
       h2f2V.push_back(inpHD.getHisto2F_2());
     }
+    delete f;
   }
 
   Int_t NP = int(h1fV.size());

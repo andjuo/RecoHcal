@@ -19,6 +19,7 @@ int main(int argc, char *argv[])
     std::cout << "  VALUE for calib LED (default), LASER or PEDESTAL\n";
     std::cout << "  VALUE for iphi = iphiMin .. iphiMax (TBD)\n";
     std::cout << "  date format year/month/day\n";
+    ListMethods(1);
     gSystem->Exit(1);
   }
   std::string fname=argv[1];

@@ -161,7 +161,7 @@ int InputCards_t::load(const std::string &fname,
     if (test == "eta") {
       do {
 	ss >> val;
-	fIEta.push_back(val);
+	if ((fIEta.size()==0) || (fIEta.back()!=val)) fIEta.push_back(val);
       } while (!ss.eof());
     }
     else if (test == "calibration") {
@@ -171,9 +171,10 @@ int InputCards_t::load(const std::string &fname,
       ss >> fDepth;
     }
     else if (test == "iphi" ) {
-      //ss >> fIPhi;
-      ss >> val;
-      fIPhi.push_back(val);
+      do {
+	ss >> val;
+	if ((fIPhi.size()==0) || (fIPhi.back()!=val)) fIPhi.push_back(val);
+      } while (!ss.eof());
     }
     else if (test == "inputruns") {
       if (!r.assign(line)) {

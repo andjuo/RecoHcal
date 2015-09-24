@@ -107,8 +107,13 @@ public:
   std::string calibType() const { return fCalibType; }
   void calibType(std::string set_type) { fCalibType=set_type; }
   const std::vector<int> &ieta() const { return fIEta; }
+  template<class idx_t>
+  int ieta(idx_t idx) const { return fIEta[idx]; }
   const std::vector<int> &iphi() const { return fIPhi; }
+  template<class idx_t>
+  int iphi(idx_t idx) const { return fIPhi[idx]; }
   std::vector<int> &edit_iphi() { return fIPhi; }
+  std::vector<int> &edit_ieta() { return fIEta; }
   const std::vector<InputRuns_t> &runData() const { return fRunData; }
   template<class idx_t>
   const InputRuns_t& runData(idx_t idx) const { return fRunData[idx]; }
