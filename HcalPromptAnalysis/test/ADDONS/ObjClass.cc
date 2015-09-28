@@ -142,7 +142,7 @@ int InputCards_t::load(const std::string &fname,
   fFName=fname;
   std::cout << "InputCards_t::load(" << fname << ") ..." << std::endl;
 
-  std::ifstream fin(fname);
+  std::ifstream fin(fname.c_str());
   if (!fin.is_open()) {
     std::cout << "failed to open the file <" << fname << ">\n";
     return 0;
@@ -191,6 +191,10 @@ int InputCards_t::load(const std::string &fname,
     }
   }
   fin.close();
+
+  if (fIEta.size()>1) std::sort(fIEta.begin(),fIEta.end());
+  if (fIPhi.size()>1) std::sort(fIPhi.begin(),fIPhi.end());
+
   return 1;
 }
 
@@ -249,7 +253,7 @@ int LoadInputRuns(const std::string &fname, std::vector<InputRuns_t> &vec,
 		  InputRuns_t *inpRunMin, InputRuns_t *inpRunMax) {
   vec.clear();
 
-  std::ifstream fin(fname);
+  std::ifstream fin(fname.c_str());
   if (!fin.is_open()) {
     std::cout << "failed to open the file <" << fname << ">\n";
     return 0;

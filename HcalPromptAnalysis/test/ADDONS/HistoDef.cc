@@ -32,6 +32,7 @@ TString GetMethodName(TMethod_t method, int shortVersion) {
   case _calcWCalib: name ="WCalib"; break;
   case _calcRCalib: name="RCalib"; break;
   case _calcLast: name="Last"; break;
+  case _calcSpec: name="Spec"; break;
   case _calcUnknown: name="Unknown"; break;
   default:
     std::cout << "GetName(TMethod_t): missing entry\n";
@@ -67,6 +68,7 @@ TMethod_t GetMethod(TString str) {
   else if (str.Index("wcalib")!=-1) method=_calcWCalib;
   else if (str.Index("rcalib")!=-1) method=_calcRCalib;
   else if (str.Index("unknown")!=-1) method=_calcUnknown;
+  else if (str.Index("spec")!=-1) method=_calcSpec;
   else if (str.Index("last")!=-1) method=_calcLast;
   else if (str.Index("amp")!=-1) method=_calcAmp;
   else if (str.Index("tsn")!=-1) method=_calcTSn;
@@ -104,6 +106,96 @@ void CheckMethodConversion(int shortVersion)
   std::cout << "\n";
 }
 
+// -------------------------------------------------------------
+// -------------------------------------------------------------
+
+TString GetSpecMethodName(TSpecMethod_t method, int shortVersion) {
+  TString name;
+  switch(method) {
+  case _specNone: name="specNone"; break;
+  case _specAvgPhi: name="AvgPhi"; break;
+  case _specLast: name="specLast"; break;
+  case _specUnknown: name="specUnknown"; break;
+  default:
+    std::cout << "GetName(TSpecMethod_t): missing entry\n";
+    name="specUNDEFINED";
+  }
+  if (!shortVersion) name.Prepend("SpecMethod_");
+  return name;
+}
+
+// -------------------------------------------------------------
+
+TSpecMethod_t GetSpecMethod(TString str) {
+  TSpecMethod_t method=_specUnknown;
+  str.ToLower();
+  // change to the lower-case letters
+  // amp, tsn, tsx, width, ratio are at the end
+  if (str.Index("avgphi")!=-1) method=_specAvgPhi;
+  else if (str.Index("specnone")!=-1) method=_specNone;
+  else if (str.Index("speclast")!=-1) method=_specLast;
+  else if (str.Index("specunknown")!=-1) method=_specUnknown;
+  else {
+    std::cout << "cannot identify special method from <" << str << ">\n";
+    method=_specUnknown;
+  }
+  return method;
+}
+
+// -------------------------------------------------------------
+
+void ListSpecMethods(int shortVersion)
+{
+  std::cout << "available spec methods (as strings): ";
+  for (TSpecMethod_t m=_specAvgPhi; m!=_specLast; next(m)) {
+    std::cout << " " << GetSpecMethodName(m,shortVersion);
+  }
+  std::cout << "\n";
+}
+
+// -------------------------------------------------------------
+
+void CheckSpecMethodConversion(int shortVersion)
+{
+  std::cout << "available special methods (as strings):\n";
+  for (TSpecMethod_t m=_specAvgPhi; m!=_specLast; next(m)) {
+    std::cout << "i=" << (int(m)-int(_specAvgPhi)) << "\n";
+    std::cout << " " << GetSpecMethodName(m,shortVersion) << "\n";
+    std::cout << " " << GetSpecMethodName(GetSpecMethod(GetSpecMethodName(m,shortVersion)),shortVersion) << "\n";
+  }
+  std::cout << "\n";
+}
+
+// -------------------------------------------------------------
+// -------------------------------------------------------------
+
+TString GetSpecMethodName(SpecMethodDef_t method, int shortVersion) {
+  TString name;
+  if (shortVersion) {
+    name= GetSpecMethodName(method.method(), shortVersion) +
+      TString("_") + method.name();
+  }
+  else {
+    name= GetSpecMethodName(method.method(), shortVersion) +
+      TString(" name: ") + method.name();
+  }
+  return name;
+}
+
+// -------------------------------------------------------------
+
+/*
+SpecMethodDef_t GetSpecMethodDef(TString str) {
+  int idx= str.Index("_");
+  TString name= (idx==-1) ? "undef" : str.Substr(idx,str.Length());
+  TSpecMethod_t m=GetSpecMethod(str);
+  SpecMethodDef_t method(name,m,imin,imax);
+  if (m==_specUnknown) {
+    std::cout << "GetSpecMethodDef: failed to determine the special method\n";
+  }
+  return method;
+}
+*/
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 
@@ -179,9 +271,128 @@ TAction_t GetAction(TString str) {
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 
+SpecMethodDef_t::SpecMethodDef_t(TString set_name) :
+  fMethod(_specNone), fIVec(), fName(set_name)
+{}
+
+// -------------------------------------------------------------
+
+SpecMethodDef_t::SpecMethodDef_t(TString set_name, TSpecMethod_t set_method,
+				 const std::vector<int> &set_idx) :
+  fMethod(set_method), fIVec(set_idx), fName(set_name)
+{}
+
+// -------------------------------------------------------------
+
+int SpecMethodDef_t::assign(TSpecMethod_t set_method,
+			    int set_imin, int set_imax, int set_step)
+{
+  fMethod=set_method;
+  fIVec.clear();
+
+  if ((set_imin > set_imax) || (set_step==0)) {
+    std::cout << "SpecMethodDef_t::assign set_imin=" << set_imin
+	      << ", set_imax=" << set_imax << ", set_step=" << set_step
+	      << ": values are not correctly ordered\n";
+    return 0;
+  }
+
+  int ok=1;
+  switch(set_method) {
+  case _specNone: ok=1; break;
+  case _specAvgPhi:
+    if ((set_imin<=0) || (set_imax<=0) || (set_imin>=72) || (set_imax>72)) {
+      std::cout << Form("SpecMethodDef_t::assign(specAvgPhi,%d,%d,%d):",
+			set_imin,set_imax,set_step)
+		<< " expected values are from 0 to 72(max)\n";
+      ok=0;
+    }
+    fIVec.reserve(set_imax-set_imin);
+    for (int iphi=set_imin; iphi<set_imax; iphi+=set_step) {
+      fIVec.push_back(iphi);
+    }
+    break;
+  case _specLast: ok=1; break;
+  default:
+    std::cout << "SpecMethodDef_t::assign is not ready for this special method\n";
+    ok=0;
+  }
+  return ok;
+}
+
+// -------------------------------------------------------------
+
+void SpecMethodDef_t::assign(const SpecMethodDef_t &s, TString new_name)
+{
+  fMethod=s.fMethod;
+  fIVec=s.fIVec;
+  if (new_name.Length()) fName=new_name; else fName=s.fName;
+}
+
+// -------------------------------------------------------------
+
+TString SpecMethodDef_t::explainIdx() const
+{
+  TString explain;
+  int allPhi=0;
+  if (fIVec.size()==cIPhiMax) {
+    allPhi=1;
+    for (unsigned int i=0; allPhi && (i<fIVec.size()); i++) {
+      if (fIVec[i]!=i+1)  allPhi=0;
+    }
+  }
+  if (allPhi==1) explain="all-IPhi";
+  else {
+    explain="iphi=";
+    int cont=0;
+    for (unsigned int i=0; i<fIVec.size(); i++) {
+      if ((i<fIVec.size()-1) && (fIVec[i]+1==fIVec[i+1])) {
+	if (cont==0) {
+	  if (i!=0) explain.Append(",");
+	  explain.Append(Form("%d-",fIVec[i]));
+	}
+	cont++;
+      }
+      else {
+	if ((i!=0) && !cont) explain.Append(",");
+	explain.Append(Form("%d",fIVec[i]));
+	cont=0;
+      }
+    }
+  }
+  return explain;
+}
+
+// -------------------------------------------------------------
+
+SpecMethodDef_t& SpecMethodDef_t::operator=(const SpecMethodDef_t &s) {
+  if (this==&s) return *this;
+  fMethod=s.fMethod;
+  fIVec=s.fIVec;
+  fName=s.fName;
+  return *this;
+}
+
+// -------------------------------------------------------------
+
+std::ostream& operator<<(std::ostream& out, const SpecMethodDef_t &s)
+{
+  out << "SpecMethodDef: " << GetSpecMethodName(s) << "."
+      << Form(" iVec[%d]: ",s.fIVec.size());
+  for (unsigned int i=0; i<s.fIVec.size(); i++) {
+    out << " " << s.fIVec[i];
+  }
+  return out;
+}
+
+// -------------------------------------------------------------
+// -------------------------------------------------------------
+
 HistoDef_t::HistoDef_t(TString set_calibtype, TMethod_t set_method, int set_depth) :
   fCalibType(set_calibtype),
-  fMethod(set_method), fDepth(set_depth),
+  fMethod(set_method),
+  fSpecMethod(),
+  fDepth(set_depth),
   fPlotTitle("title"),
   fInpHistoName("inphisto"),
   fInpHistoName2("inphisto2"),
@@ -201,6 +412,7 @@ HistoDef_t::HistoDef_t(TString set_calibtype, TMethod_t set_method, int set_dept
 HistoDef_t::HistoDef_t(const HistoDef_t &d, TString cloneTag) :
   fCalibType(d.fCalibType),
   fMethod(d.fMethod),
+  fSpecMethod(d.fSpecMethod),
   fDepth(d.fDepth),
   fPlotTitle(d.fPlotTitle),
   fInpHistoName(d.fInpHistoName),
@@ -234,6 +446,15 @@ HistoDef_t::HistoDef_t(const HistoDef_t &d, TString cloneTag) :
 
 // -------------------------------------------------------------
 
+TString HistoDef_t::getMethodName() const
+{
+  if (fSpecMethod.method()==_specNone) return GetMethodName(fMethod);
+  TString name = fSpecMethod.name() + TString("_") + GetMethodName(fMethod,1);
+  return name;
+}
+
+// -------------------------------------------------------------
+
 int HistoDef_t::setMethod(TMethod_t set_method, int set_depth) {
   fMethod=set_method;
   fDepth=set_depth;
@@ -250,120 +471,120 @@ int HistoDef_t::setMethod(TMethod_t set_method, int set_depth) {
     fHistoDim=_histo2F;
     break;
   case _calcTSn:
-    fPlotTitle=Form("Time dependence of TSn averaged over events of each %s run for some(=9) random HB-depth1 channels",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of TSn averaged over events of each %s run for some(=9) random HF channels",fCalibType.Data());
     fInpHistoName=Form("h_mapDepth%dTSmeanA_HF",fDepth);
     fInpHistoName2= histMapD;
     fHistoDim=_histo2F;
     break;
   case _calcTSx:
-    fPlotTitle=Form("Time dependence of TSx averaged over events of each %s run for some(=9) random HB-depth1 channels",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of TSx averaged over events of each %s run for some(=9) random HF channels",fCalibType.Data());
     fInpHistoName=Form("h_mapDepth%dTSmaxA_HF",fDepth);
     fInpHistoName2= histMapD;
     fHistoDim=_histo2F;
     break;
   case _calcWidth:
-    fPlotTitle=Form("Time dependence of RMS averaged over events of each %s run for some(=9) random HB-depth1 channels",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of RMS averaged over events of each %s run for some(=9) random HF channels",fCalibType.Data());
     fInpHistoName=Form("h_mapDepth%dAmplitude_HF",fDepth);
     fInpHistoName2= histMapD;
     fHistoDim=_histo2F;
     break;
   case _calcRatio:
-    fPlotTitle=Form("Time dependence of amplitude Ratio averaged over events of each %s run for some(=9) random HB-depth1 channels",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of amplitude Ratio averaged over events of each %s run for some(=9) random HF channels",fCalibType.Data());
     fInpHistoName=Form("h_mapDepth%dAmpl_HF",fDepth);
     fInpHistoName2= histMapD;
     fHistoDim=_histo2F;
     break;
   case _calcAvgAmp:
-    fPlotTitle=Form("Time dependence of full Amplitude averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of full Amplitude averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_ADCAmpl_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgTSn:
-    fPlotTitle=Form("Time dependence of TSn averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of TSn averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_TSmeanA_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgTSx:
-    fPlotTitle=Form("Time dependence of TSx averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of TSx averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_TSmaxA_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgWidth:
-    fPlotTitle=Form("Time dependence of RMS averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of RMS averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_Amplitude_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgRatio:
-    fPlotTitle=Form("Time dependence of amplitude Ratio averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of amplitude Ratio averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_Ampl_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgP0:
-    fPlotTitle=Form("Time dependence of Pedestal(cap0) averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of Pedestal(cap0) averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_pedestal0_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgP1:
-    fPlotTitle=Form("Time dependence of Pedestal(cap1) averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of Pedestal(cap1) averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_pedestal1_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgP2:
-    fPlotTitle=Form("Time dependence of Pedestal(cap2) averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of Pedestal(cap2) averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_pedestal2_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgP3:
-    fPlotTitle=Form("Time dependence of Pedestal(cap3) averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of Pedestal(cap3) averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_pedestal3_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgPW0:
-    fPlotTitle=Form("Time dependence of PedestalWidth(cap0) averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of PedestalWidth(cap0) averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_pedestalw0_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgPW1:
-    fPlotTitle=Form("Time dependence of PedestalWidth(cap1) averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of PedestalWidth(cap1) averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_pedestalw1_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgPW2:
-    fPlotTitle=Form("Time dependence of PedestalWidth(cap2) averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of PedestalWidth(cap2) averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_pedestalw2_HF");
     fHistoDim=_histo1F;
     break;
   case _calcAvgPW3:
-    fPlotTitle=Form("Time dependence of PedestalWidth(cap3) averaged over events of each %s run and over all channels of HB-depth1",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of PedestalWidth(cap3) averaged over events of each %s run and over all channels of HF",fCalibType.Data());
     fInpHistoName=Form("h_pedestalw3_HF");
     fHistoDim=_histo1F;
     break;
   case _calcACalib:
-    fPlotTitle=Form("Time dependence of A_calib averaged over events of each %s run for some(=9) random HB channels",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of A_calib averaged over events of each %s run for some(=9) random HF channels",fCalibType.Data());
     fInpHistoName=Form("h_mapADCCalib_HF");
     fInpHistoName2= histMap_;
     fHistoDim=_histo2F;
     break;
   case _calcTSnCalib:
-    fPlotTitle=Form("Time dependence of TSn_calib averaged over events of each %s run for some(=9) random HB channels",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of TSn_calib averaged over events of each %s run for some(=9) random HF channels",fCalibType.Data());
     fInpHistoName=Form("h_mapTSmeanCalib_HF");
     fInpHistoName2= histMap_;
     fHistoDim=_histo2F;
     break;
   case _calcTSxCalib:
-    fPlotTitle=Form("Time dependence of TSx_calib averaged over events of each %s run for some(=9) random HB channels",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of TSx_calib averaged over events of each %s run for some(=9) random HF channels",fCalibType.Data());
     fInpHistoName=Form("h_mapTSmaxCalib_HF");
     fInpHistoName2= histMap_;
     fHistoDim=_histo2F;
     break;
   case _calcWCalib:
-    fPlotTitle=Form("Time dependence of W_calib averaged over events of each %s run for some(=9) random HB channels",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of W_calib averaged over events of each %s run for some(=9) random HF channels",fCalibType.Data());
     fInpHistoName=Form("h_mapWidthCalib_HF");
     fInpHistoName2= histMap_;
     fHistoDim=_histo2F;
     break;
   case _calcRCalib:
-    fPlotTitle=Form("Time dependence of Ratio_calib averaged over events of each %s run for some(=9) random HB channels",fCalibType.Data());
+    fPlotTitle=Form("Time dependence of Ratio_calib averaged over events of each %s run for some(=9) random HF channels",fCalibType.Data());
     fInpHistoName=Form("h_mapRatioCalib_HF");
     fInpHistoName2= histMap_;
     fHistoDim=_histo2F;
@@ -387,6 +608,69 @@ int HistoDef_t::setMethod(TString reset_calibtype, TMethod_t set_method,
   }
   fCalibType=reset_calibtype;
   return this->setMethod(set_method,set_depth);
+}
+
+// -------------------------------------------------------------
+
+int HistoDef_t::setSpecMethod(TSpecMethod_t specM, InputCards_t &ic,
+			      TString set_specMethodTag)
+{
+  if (specM==_specNone) {
+    fSpecMethod.clear();
+    return 1;
+  }
+
+  if (fMethod==_calcNone) {
+    std::cout << "HistoDef_t::setSpecMethod should be called after setMethod\n";
+    return 0;
+  }
+
+  // Get iphi values, set a special flag in InputCardds
+  std::vector<int> iphiVec=ic.iphi();
+  ic.edit_iphi().clear();
+  ic.edit_iphi().push_back(-1111);
+  if (iphiVec.size()) std::sort(iphiVec.begin(),iphiVec.end());
+
+  //  initialize fSpecMethod. The final name is formed in the 2nd step
+  if (!fSpecMethod.assign(specM,iphiVec,set_specMethodTag)) {
+    std::cout << "error in HistoDef_t::setSpecMethod\n";
+    return 0;
+  }
+  TString explain= fSpecMethod.explainIdx();
+  TString forNameTag=explain;
+  forNameTag.ReplaceAll("iphi=","");
+  fSpecMethod.nameTag(forNameTag + set_specMethodTag);
+
+  fPlotTitle.ReplaceAll("averaged","averaged " + explain);
+  std::cout << "updated title <" << fPlotTitle << ">\n";
+
+  return 1;
+}
+
+// -------------------------------------------------------------
+
+int HistoDef_t::setSpecMethod(const SpecMethodDef_t &specM)
+{
+  if (specM.method()==_specNone) {
+    fSpecMethod.clear();
+    return 1;
+  }
+
+  if (fMethod==_calcNone) {
+    std::cout << "HistoDef_t::setSpecMethod should be called after setMethod\n";
+    return 0;
+  }
+
+  fSpecMethod=specM;
+  return 1;
+}
+
+// -------------------------------------------------------------
+
+THistoDim_t HistoDef_t::useHistoDim() const
+{
+  if (fSpecMethod.method()==_specNone) return fHistoDim;
+  else return _histo1F;
 }
 
 // -------------------------------------------------------------
@@ -467,10 +751,65 @@ int HistoDef_t::loadHisto(TFile &f, TString setTag)
       fH2F_ratio->SetDirectory(0);
     }
 
+    switch (fSpecMethod.method()) {
+    case _specNone: break;
+    case _specAvgPhi: {
+      if (!fH2F_ratio) {
+	std::cout << "HistoDef_t::loadHisto for specAvgPhi requires fH2F_ratio\n";
+	return 0;
+      }
+      if (fH2F_ratio->GetNbinsX()!=cIEtaMax) {
+	std::cout << "HistoDef_t::loadHisto for specAvgPhi expects x-axis to have " << cIEtaMax << " bins\n";
+	return 0;
+      }
+      TString hname=fH2F_ratio->GetName() + TString("_avgPhi");
+      fH1F= new TH1F(hname,hname,cIEtaMax, -41.,41.);
+      if (!fH1F) {
+	std::cout << "HistoDef_t::loadHisto: failed to create histo <" << hname
+		  << ">\n";
+	return 0;
+      }
+      fH1F->SetDirectory(0);
+      if (fSpecMethod.iVec().size()>0) {
+	for (int ietaBin=1; ietaBin<=fH1F->GetNbinsX(); ++ietaBin) {
+	  Float_t sum=0;
+	  Float_t sumErr2=0;
+	  for (unsigned int i=0; i<fSpecMethod.iVec().size(); ++i) {
+	    int iphiBin= fSpecMethod.i(i) + 1;
+	    sum += fH2F_ratio->GetBinContent(ietaBin,iphiBin);
+	    sumErr2 += pow(fH2F_ratio->GetBinError(ietaBin,iphiBin), 2);
+	  }
+	  sum /= Float_t(fSpecMethod.iVec().size());
+	  sumErr2= sqrt(sumErr2)/Float_t(fSpecMethod.iVec().size());
+	  fH1F->SetBinContent(ietaBin, sum);
+	  fH1F->SetBinError(ietaBin, sumErr2);
+	}
+      }
+    } // spec method AvgPhi
+      break;
+    default:
+      std::cout << "HistoDef_t::loadHisto cannot handle special method "
+		<< fSpecMethod << "\n";
+      return 0;
+    }
+
     return 1;
   }
   std::cout << "HistoDef_t::loadHisto error: object is not prepared\n";
   return 0;
+}
+
+// -------------------------------------------------------------
+
+std::ostream& operator<< (std::ostream &out, const HistoDef_t &hd) {
+  out << "HistoDef_t:: calibType=" << hd.fCalibType << ", "
+      << " depth=" << hd.fDepth << "\n";
+  out << " method=" << hd.fMethod << ", specMethod=(" << hd.fSpecMethod;
+  out << "),\n plotTile=<" << hd.fPlotTitle << ">\n";
+  out << " inpHistoName =<" << hd.fInpHistoName  << ">\n";
+  out << " inpHistoName2=<" << hd.fInpHistoName2 << ">\n";
+  out << " histoDim=" << hd.fHistoDim << "\n";
+  return out;
 }
 
 // -------------------------------------------------------------

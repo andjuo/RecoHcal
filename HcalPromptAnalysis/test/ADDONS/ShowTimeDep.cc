@@ -1,5 +1,6 @@
 #include "ShowTimeDep.h"
 #include <TGraphErrors.h>
+#include "helpWebPage.h"
 
 
 // -------------------------------------------------------------
@@ -51,7 +52,8 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
   std::vector<TH2F*> h2fEffV;
 
   std::cout << "loading histograms for the method="
-	    << GetMethodName(inpHD.method()) << "\n";
+	    << GetMethodName(inpHD.method()) << "; full method name="
+	    << inpHD.getMethodName() << "\n";
 
   for (unsigned int i=0; i<filesv.size(); ++i) {
     TFile *f= new TFile(filesv[i].c_str(), "READ");
@@ -154,7 +156,8 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 
 	  outFile=Form("%s/fig_%s_outDepth%d_%s%d_HF.%s",
 		       opt.fOutDirName.Data(),
-		       GetMethodName(inpHD.method(),1).Data(),
+		       //GetMethodName(inpHD.method(),1).Data(),
+		       inpHD.getMethodName().Data(),
 		       ic.depth(),
 		       fixedVarName,
 		       fixedVarVal,
@@ -188,7 +191,7 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 		      << ", irun=" << irun
 		      << "\n";
 
-	    switch(inpHD.method()) {
+	    switch(inpHD.useMethod()) {
 	    case _calcAvgAmp:
 	    case _calcAvgTSn:
 	    case _calcAvgTSx:
@@ -249,6 +252,11 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 		if(iEta == 2) std::cout<<iPhi<<" RRRR "<<avgW[irun]<<" "<<iEta<<std::endl;
 	      }
 	    } break;
+	    case _calcSpec:
+	      std::cout << "get spec value from " << h1fV[irun]->GetName() << "\n";
+	      avgW[irun] = h1fV[irun]->GetBinContent(iEta);
+	      avgWErr[irun] = h1fV[irun]->GetBinError(iEta);
+	      break;
 	    default:
 	      std::cout << "not ready for this method\n";
 	      return NULL;
@@ -416,4 +424,19 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 
   return canvV;
 }
-//______________________________________________________________________________
+//___________________________________________________________________________
+
+// --------------------------------------------------------------------------
+
+int createWebPage(std::vector<TCanvas*> &canvasV,
+		  const HistoDef_t &hd, const InputCards_t &ic,
+		  const PlotOptions_t &opt)
+{
+  std::vector<TString> infolines;
+  TString destDir=TString("webPage_") + opt.fOutDirName;
+  int res=CreateWebPage(canvasV,"Time dependency",destDir,infolines,
+			"index.html","",1,"300px");
+  return res;
+}
+
+// --------------------------------------------------------------------------

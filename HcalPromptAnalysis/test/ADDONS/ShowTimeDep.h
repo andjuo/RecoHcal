@@ -13,6 +13,10 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t hd,
 				       const InputCards_t &ic,
 				       const PlotOptions_t &opt);
 
+int createWebPage(std::vector<TCanvas*> &canvasV,
+		  const HistoDef_t &hd, const InputCards_t &ic,
+		  const PlotOptions_t&opt);
+
 // --------------------------------------------------------
 // --------------------------------------------------------
 
