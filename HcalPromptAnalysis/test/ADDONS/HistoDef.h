@@ -48,10 +48,6 @@ typedef enum { _specNone=0, _specAvgPhi,
 	       _specUnknown
 } TSpecMethod_t;
 
-typedef enum { _specNone=0, _specAvgPhi,
-	       _specLast,
-	       _specUnknown
-} TSpecMethod_t;
 
 // -------------------------------------------------------------
 
