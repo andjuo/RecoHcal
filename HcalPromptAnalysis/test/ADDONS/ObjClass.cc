@@ -4,6 +4,30 @@ using std::cout;
 using std::endl;
 
 //---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
+int checkDetector(std::string name, int depth) {
+  int ok=1;
+  if (name=="HF") {
+    if ((depth!=1) && (depth!=2)) ok=0;
+  }
+  else if (name=="HB") {
+    if ((depth<1) || (depth>2)) ok=0;
+  }
+  else if (name=="HE") {
+    if ((depth<1) || (depth>3)) ok=0;
+  }
+  else if (name=="HO") {
+    if (depth!=4) ok=0;
+  }
+  std::cout << "checkDetector(name=" << name << ", depth=" << depth << ")\n";
+  if (!ok) std::cout << " -- failed\n";
+  else std::cout << " -- passed\n";
+  return ok;
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 
 InputRuns_t::InputRuns_t() : fYear(0),fMonth(0),fDay(0),
 			     fHour(0),fMin(0),fSec(0),
@@ -135,6 +159,33 @@ void InputCards_t::clear()
 
 // ------------------------------------------------------
 
+int InputCards_t::detector(std::string set_detector) {
+  if (set_detector.size()==2) {
+    fDetector=set_detector.c_str();
+  }
+  else if (set_detector.size()==3) {
+    char c= set_detector[set_detector.size()-1];
+    if ((c>='1') && (c<='4')) {
+      fDepth= int(c)-int('1') + 1;
+      fDetector=Form("%c%c",set_detector[0],set_detector[1]);
+    }
+    else {
+      std::cout << "InputCards_t::detector: 3 characters supplied in <"
+		<< set_detector << "> but the last one is not a number\n";
+      return 0;
+    }
+  }
+  int res=checkDetector(fDetector,fDepth);
+  if (!res) {
+    std::cout << "InputCards_t::detector got improper value <"
+	      << set_detector << ">\n";
+    return 0;
+  }
+  return 1;
+}
+
+// ------------------------------------------------------
+
 int InputCards_t::load(const std::string &fname,
 		       InputRuns_t *inpRunMin, InputRuns_t *inpRunMax)
 {
@@ -218,6 +269,7 @@ int InputCards_t::prepareRootFileNamesAndTimer(std::vector<std::string> &fnames,
     TDatime t( it->sqlTimeStr().c_str() );
     (*timeArr)[idx] = Float_t( Double_t(t.Convert()) - startTime );
     const char *histoFileNameT="/afs/cern.ch/cms/CAF/CMSALCA/ALCA_HCALCALIB/HCALMONITORING/RDMweb/histos/%s_%d.root";
+    //const char *histoFileNameT="/home/andriusj/temp/%s_%d.root";
     std::string fname=Form(histoFileNameT,fCalibType.c_str(),it->runNo());
     fnames.push_back(fname);
   }
@@ -244,6 +296,25 @@ std::ostream& operator<<(std::ostream& out, const InputCards_t &ic) {
     out << i << ") " << ic.fRunData[i] << "\n";
   }
   return out;
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
+void printHisto(TString msg, const TH2F *h2) {
+  std::cout << "printHisto: msg=" << msg << std::endl;
+  if (!h2) { std::cout << "histoPtr is null\n"; return; }
+  std::cout << " histo " << h2->GetName() << " "
+	    << h2->GetNbinsX() << " x " << h2->GetNbinsY() << "\n";
+  for (int ibin=1; ibin<=h2->GetNbinsX(); ++ibin) {
+    for (int jbin=1; jbin<=h2->GetNbinsY(); ++jbin) {
+      if ((ibin>100) || (jbin>100)) std::cout << ".";
+      std::cout << Form(" (%d,%d) ",ibin,jbin)
+		<< h2->GetBinContent(ibin,jbin) << "\n";
+    }
+  }
+  std::cout << "\n";
+  return;
 }
 
 //---------------------------------------------------------------------------

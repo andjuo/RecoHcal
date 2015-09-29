@@ -56,12 +56,14 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 	    << inpHD.getMethodName() << "\n";
 
   for (unsigned int i=0; i<filesv.size(); ++i) {
-    TFile *f= new TFile(filesv[i].c_str(), "READ");
-    if (!f || !f->IsOpen()) {
-      std::cout << "failed to open the file <" << filesv[i] << ">\n";
+    HERE("opening file",filesv[i].c_str());
+    TFile f(filesv[i].c_str(), "READ");
+    if (!f.IsOpen()) {
+      std::cout << "failed to open the file <" << filesv[i] << ">" << std::endl;
     }
     else {
-      if (!inpHD.loadHisto(*f,Form("_file%d",i))) {
+      HERE("loading histos from",filesv[i].c_str());
+      if (!inpHD.loadHisto(f,Form("_file%d",i))) {
 	std::cout << "error loading from file <" << filesv[i] << ">\n";
 	if (!tolerateFileFailure) { return NULL; }
 	std::cout << " ... tolerating this one\n";
@@ -69,14 +71,25 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 	return NULL;
       }
       else {
+	HERE("loaded ok");
+	//if (!inpHD.getHisto()) std::cout << "getHisto is null\n";
+	//if (!inpHD.getHisto2F()) std::cout << "getHisto2F is null\n";
+	//if (!inpHD.getHisto2F_2()) std::cout << "getHisto2F_2 is null\n";
+	//if (!inpHD.getHisto2F_ratio()) std::cout << "getHisto2F_ratio is null\n";
 	h1fV.push_back(inpHD.getHisto());
 	h2fV.push_back(inpHD.getHisto2F());
 	h2f2V.push_back(inpHD.getHisto2F_2());
 	h2fEffV.push_back(inpHD.getHisto2F_ratio());
+
+	//printHisto("inpHD.getHisto2F",inpHD.getHisto2F());
+	//printHisto("inpHD.getHisto2F_2",inpHD.getHisto2F_2());
+	//printHisto("inpHD.getHisto2F_ratio",inpHD.getHisto2F_ratio());
       }
     }
-    delete f; // close the file
+    //delete f; // close the file
+    f.Close();
   }
+  HERE("histograms loaded");
 
   unsigned int numRuns= h1fV.size();
   if (numRuns==0) {
@@ -113,7 +126,9 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 
 
   //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  gSystem->mkdir(opt.fOutDirName,kTRUE); // kTRUE-recursive
+  if (opt.fSaveEveryPlot==1) {
+    gSystem->mkdir(opt.fOutDirName,kTRUE); // kTRUE-recursive
+  }
 
 
   std::cout << "Loop over profiles\n";
@@ -154,13 +169,14 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 	  grV=new std::vector<TGraphErrors*>();
 	  grVV.push_back(grV);
 
-	  outFile=Form("%s/fig_%s_outDepth%d_%s%d_HF.%s",
+	  outFile=Form("%s/fig_%s_outDepth%d_%s%d_%s.%s",
 		       opt.fOutDirName.Data(),
 		       //GetMethodName(inpHD.method(),1).Data(),
 		       inpHD.getMethodName().Data(),
 		       ic.depth(),
 		       fixedVarName,
 		       fixedVarVal,
+		       ic.detector().c_str(),
 		       opt.fOutFigFormat.Data());
 	  std::cout << " -- setup outFile=<" << outFile << ">\n";
 	  outLeg=Form("HF depth %d, %s=%d",ic.depth(),fixedVarName,fixedVarVal);
@@ -190,6 +206,7 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 		      << Form(", idxIEta=%d(iEtaBin=%d)",idxIEta,iEta)
 		      << ", irun=" << irun
 		      << "\n";
+	    std::cout << "inpHD.useMethod=" << GetMethodName(inpHD.useMethod()) << "\n";
 
 	    switch(inpHD.useMethod()) {
 	    case _calcAvgAmp:
@@ -215,10 +232,16 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 	    case _calcTSxCalib:
 	    case _calcWCalib:
 	    case _calcRCalib: {
-	      /* int oldCode=0;
+	      int oldCode=0;
 	      if (oldCode) {
 		TH2F *twod1 = h2fV[irun];
 		TH2F *twod0 = h2f2V[irun];
+		if (!twod1 || !twod0) {
+		  if (!twod1) std::cout << "twod1 is null\n";
+		  if (!twod0) std::cout << "twod0 is null\n";
+		  std::cout << "error detected" << std::endl;
+		  return NULL;
+		}
 		TH2F *Ceff= (TH2F*)twod1->Clone("Ceff");
 		if (!Ceff) {
 		  std::cout << "failed to clone " << twod1->GetName() << "\n";
@@ -236,7 +259,7 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 		if(iEta == 2) std::cout<<iPhi<<" RRRR "<<avgW[irun]<<" "<<iEta<<std::endl;
 		delete Ceff;
 	      } // end of old code
-	      else */
+	      else
 	      {
 		// new code
 		//std::cout << "get value for irun=" << irun << " at "
@@ -409,8 +432,10 @@ std::vector<TCanvas*>* MakeTimeDepPlot(HistoDef_t inpHD, const InputCards_t &ic,
 	  c1->Modified();
 	  c1->Update();
 	  //
-	  std::cout << "Saving the plot to <" << outFile << ">\n\n";
-	  c1->Print(outFile);
+	  if (opt.fSaveEveryPlot==1) {
+	    std::cout << "Saving the plot to <" << outFile << ">\n\n";
+	    c1->Print(outFile);
+	  }
 	}
 
       } // idxIPhi
@@ -432,6 +457,10 @@ int createWebPage(std::vector<TCanvas*> &canvasV,
 		  const HistoDef_t &hd, const InputCards_t &ic,
 		  const PlotOptions_t &opt)
 {
+  if (canvasV.size()==0) {
+    std::cout << "createWebPage canvasV.size=0\n";
+    return 0;
+  }
   std::vector<TString> infolines;
   TString destDir=TString("webPage_") + opt.fOutDirName;
   int res=CreateWebPage(canvasV,"Time dependency",destDir,infolines,

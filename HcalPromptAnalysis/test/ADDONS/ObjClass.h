@@ -48,6 +48,8 @@ int LoadInputRuns(const std::string &fname, std::vector<InputRuns_t> &vec,
 
 TCanvas* MakePlot(Int_t Method, const InputCards_t &ic);
 
+int checkDetector(std::string detectorName, int depth);
+
 //______________________________________________________________________________
 
 //---------------------------------------------------------------------------
@@ -89,6 +91,7 @@ public:
 
 struct InputCards_t {
   std::vector<int> fIEta;
+  std::string fDetector;
   int fDepth;
   std::vector<int> fIPhi;
   std::vector<InputRuns_t> fRunData;
@@ -96,17 +99,22 @@ struct InputCards_t {
   std::string fFName;
 public:
   InputCards_t(std::string set_calibType="LED") :
-     fIEta(),fDepth(-1),fIPhi(),fRunData(),
+    fIEta(),fDetector("HF"),fDepth(-1),fIPhi(),fRunData(),
        fCalibType(set_calibType), fFName() {}
   InputCards_t(const InputCards_t &ic) :
-    fIEta(ic.fIEta), fDepth(ic.fDepth), fIPhi(ic.fIPhi),
-      fRunData(ic.fRunData), fCalibType(ic.fCalibType), fFName()
+    fIEta(ic.fIEta), fDetector(ic.fDetector),
+    fDepth(ic.fDepth), fIPhi(ic.fIPhi),
+    fRunData(ic.fRunData), fCalibType(ic.fCalibType), fFName()
     {}
   void clear();
 
+  int size() const { return int(fRunData.size()); }
   int depth() const { return fDepth; }
+  void depth(int set_depth) { fDepth=set_depth; }
   std::string calibType() const { return fCalibType; }
   void calibType(std::string set_type) { fCalibType=set_type; }
+  std::string detector() const { return fDetector; }
+  int detector(std::string set_detector); // adjust, if needed { fDetector=set_detector; }
   const std::vector<int> &ieta() const { return fIEta; }
   template<class idx_t>
   int ieta(idx_t idx) const { return fIEta[idx]; }
@@ -135,6 +143,10 @@ public:
 inline void HERE(const char *msg) { std::cout << msg << std::endl; }
 template<class type_t>
 inline void HERE(const char *msg, type_t val) { std::cout << msg << " " << val << std::endl; }
+
+//---------------------------------------------------------------------------
+
+void printHisto(TString msg, const TH2F* h2);
 
 //---------------------------------------------------------------------------
 

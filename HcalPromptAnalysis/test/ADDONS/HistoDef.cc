@@ -236,41 +236,214 @@ THistoDim_t GetHistoDim(TString str)
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 
-TString GetActionName(TAction_t a) {
+TString GetSubDetFullName(TSubDet_t sd) {
   TString name="unknown";
-  switch(a) {
-  case _getNone: name="getNone"; break;
-  case _getHisto: name="getHisto"; break;
-  case _getMean: name="getMean"; break;
-  case _getLast: name="getLast"; break;
-  case _getUnknown: name="getUnknown"; break;
+  switch(sd) {
+  case _sdHB1: name="HB1"; break;
+  case _sdHB2: name="HB2"; break;
+  case _sdHE1: name="HE1"; break;
+  case _sdHE2: name="HE2"; break;
+  case _sdHE3: name="HE3"; break;
+  case _sdHO4: name="HO4"; break;
+  case _sdHF1: name="HF1"; break;
+  case _sdHF2: name="HF2"; break;
+  case _sdLast: name="sdLast"; break;
+  case _sdUnknown: name="sdUnknown"; break;
   default:
-    std::cout << "GetActionName: unknown action int(a)="
-	      << int(a) << "\n";
+    std::cout << "GetSubDetFullName: unknown subdetector int(sb)="
+	      << int(sd) << "\n";
   }
   return name;
 }
 
 // -------------------------------------------------------------
 
-TAction_t GetAction(TString str) {
-  TAction_t a=_getUnknown;
+TString GetSubDetName(TSubDet_t sd) {
+  TString name="unknown";
+  switch(sd) {
+  case _sdHB1: case _sdHB2:              name="HB"; break;
+  case _sdHE1: case _sdHE2: case _sdHE3: name="HE"; break;
+  case _sdHF1: case _sdHF2:              name="HF"; break;
+  case _sdHO4:                           name="HO"; break;
+  case _sdLast: name="sdLast"; break;
+  case _sdUnknown: name="sdUnknown"; break;
+  default:
+    std::cout << "GetSubDetName is not ready for int(subdet)="
+	      << int(sd) << "\n";
+  }
+  return name;
+}
+
+// -------------------------------------------------------------
+
+int GetSubDetDepth(TSubDet_t sd) {
+  int depth=-1;
+  switch(sd) {
+  case _sdHB1:  case _sdHE1:  case _sdHF1:    depth=1;    break;
+  case _sdHB2:  case _sdHE2:  case _sdHF2:    depth=2;    break;
+                case _sdHE3:                  depth=3;    break;
+  case _sdHO4:                                depth=4;    break;
+  default:
+    std::cout << "GetSubDetDepth(sd=" << GetSubDetFullName(sd) << ") "
+      "is not ready for this subdet\n";
+  }
+  return depth;
+}
+
+// -------------------------------------------------------------
+
+TSubDet_t GetSubDet(TString str) {
+  TSubDet_t sd=_sdUnknown;
   str.ToLower();
-  if (str.Index("getnone")!=-1) a=_getNone;
-  else if (str.Index("gethisto")!=-1) a=_getHisto;
-  else if (str.Index("getmean")!=-1) a=_getMean;
-  else if (str.Index("getlast")!=-1) a=_getLast;
-  else if (str.Index("getunknown")!=-1) a=_getUnknown;
+  if (str.Index("hb1")!=-1) sd=_sdHB1;
+  else if (str.Index("hb2")!=-1) sd=_sdHB2;
+  else if (str.Index("he1")!=-1) sd=_sdHE1;
+  else if (str.Index("he2")!=-1) sd=_sdHE2;
+  else if (str.Index("he3")!=-1) sd=_sdHE3;
+  else if (str.Index("ho4")!=-1) sd=_sdHO4;
+  else if (str.Index("hf1")!=-1) sd=_sdHF1;
+  else if (str.Index("hf2")!=-1) sd=_sdHF2;
+  else if (str.Index("sdlast")!=-1) sd=_sdLast;
+  else if (str.Index("sdunknown")!=-1) sd=_sdUnknown;
   else {
-    std::cout << "GetAction could not identify action in <"
+    std::cout << "GetSubDet could not identify subdetector in <"
 	      << str << ">\n";
   }
-  return a;
+  return sd;
+}
+
+// -------------------------------------------------------------
+
+TSubDet_t GetSubDet(TString str_inp, int depth) {
+  TSubDet_t sd=_sdUnknown;
+  TString str=str_inp;
+  str.ToLower();
+  str.Append(Form("%d",depth));
+  if (str.Index("hb1")!=-1) sd=_sdHB1;
+  else if (str.Index("hb2")!=-1) sd=_sdHB2;
+  else if (str.Index("he1")!=-1) sd=_sdHE1;
+  else if (str.Index("he2")!=-1) sd=_sdHE2;
+  else if (str.Index("he3")!=-1) sd=_sdHE3;
+  else if (str.Index("ho4")!=-1) sd=_sdHO4;
+  else if (str.Index("hf1")!=-1) sd=_sdHF1;
+  else if (str.Index("hf2")!=-1) sd=_sdHF2;
+  else if (str.Index("sdlast")!=-1) sd=_sdLast;
+  else if (str.Index("sdunknown")!=-1) sd=_sdUnknown;
+  else {
+    std::cout << "GetSubDet(str,depth) could not identify subdetector from <"
+	      << str_inp << "> and depth=" << depth << "\n";
+  }
+  return sd;
 }
 
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 
+SpecMethodDef_t::SpecMethodDef_t(TString set_name) :
+  fMethod(_specNone), fIVec(), fName(set_name)
+{}
+
+// -------------------------------------------------------------
+
+SpecMethodDef_t::SpecMethodDef_t(TString set_name, TSpecMethod_t set_method,
+				 const std::vector<int> &set_idx) :
+  fMethod(set_method), fIVec(set_idx), fName(set_name)
+{}
+
+// -------------------------------------------------------------
+
+int SpecMethodDef_t::assign(TSpecMethod_t set_method,
+			    int set_imin, int set_imax, int set_step)
+{
+  fMethod=set_method;
+  fIVec.clear();
+
+  if ((set_imin > set_imax) || (set_step==0)) {
+    std::cout << "SpecMethodDef_t::assign set_imin=" << set_imin
+	      << ", set_imax=" << set_imax << ", set_step=" << set_step
+	      << ": values are not correctly ordered\n";
+    return 0;
+  }
+
+  int ok=1;
+  switch(set_method) {
+  case _specNone: ok=1; break;
+  case _specAvgPhi:
+    if ((set_imin<=0) || (set_imax<=0) || (set_imin>=72) || (set_imax>72)) {
+      std::cout << Form("SpecMethodDef_t::assign(specAvgPhi,%d,%d,%d):",
+			set_imin,set_imax,set_step)
+		<< " expected values are from 0 to 72(max)\n";
+      ok=0;
+    }
+    fIVec.reserve(set_imax-set_imin);
+    for (int iphi=set_imin; iphi<set_imax; iphi+=set_step) {
+      fIVec.push_back(iphi);
+    }
+    break;
+  case _specLast: ok=1; break;
+  default:
+    std::cout << "SpecMethodDef_t::assign is not ready for this special method\n";
+    ok=0;
+  }
+  return ok;
+}
+
+// -------------------------------------------------------------
+
+void SpecMethodDef_t::assign(const SpecMethodDef_t &s, TString new_name)
+{
+  fMethod=s.fMethod;
+  fIVec=s.fIVec;
+  if (new_name.Length()) fName=new_name; else fName=s.fName;
+}
+
+// -------------------------------------------------------------
+
+TString SpecMethodDef_t::explainIdx() const
+{
+  TString explain;
+  int allPhi=0;
+  if (fIVec.size()==cIPhiMax) {
+    allPhi=1;
+    for (unsigned int i=0; allPhi && (i<fIVec.size()); i++) {
+      if (fIVec[i]!=i+1)  allPhi=0;
+    }
+  }
+  if (allPhi==1) explain="-ALLIPhi";
+  else {
+    explain="iphi=";
+    int cont=0;
+    for (unsigned int i=0; i<fIVec.size(); i++) {
+      if ((i<fIVec.size()-1) && (fIVec[i]+1==fIVec[i+1])) {
+	if (cont==0) {
+	  if (i!=0) explain.Append(",");
+	  explain.Append(Form("%d-",fIVec[i]));
+	}
+	cont++;
+      }
+      else {
+	if ((i!=0) && !cont) explain.Append(",");
+	explain.Append(Form("%d",fIVec[i]));
+	cont=0;
+      }
+    }
+  }
+  return explain;
+}
+
+// -------------------------------------------------------------
+
+SpecMethodDef_t& SpecMethodDef_t::operator=(const SpecMethodDef_t &s) {
+  if (this==&s) return *this;
+  fMethod=s.fMethod;
+  fIVec=s.fIVec;
+  fName=s.fName;
+  return *this;
+}
+
+// -------------------------------------------------------------
+
+<<<<<<< HEAD
 SpecMethodDef_t::SpecMethodDef_t(TString set_name) :
   fMethod(_specNone), fIVec(), fName(set_name)
 {}
@@ -388,8 +561,10 @@ std::ostream& operator<<(std::ostream& out, const SpecMethodDef_t &s)
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 
-HistoDef_t::HistoDef_t(TString set_calibtype, TMethod_t set_method, int set_depth) :
+HistoDef_t::HistoDef_t(TString set_calibtype, TString set_detector,
+		       TMethod_t set_method, int set_depth) :
   fCalibType(set_calibtype),
+  fDetector((set_detector.Length()) ? set_detector : "HF"),
   fMethod(set_method),
   fSpecMethod(),
   fDepth(set_depth),
@@ -409,8 +584,55 @@ HistoDef_t::HistoDef_t(TString set_calibtype, TMethod_t set_method, int set_dept
 
 // -------------------------------------------------------------
 
+HistoDef_t::HistoDef_t(TString set_calibtype, TSubDet_t subdet,
+		       TMethod_t set_method) :
+  fCalibType(set_calibtype),
+  fDetector(GetSubDetName(subdet)),
+  fMethod(set_method),
+  fSpecMethod(),
+  fDepth(GetSubDetDepth(subdet)),
+  fPlotTitle("title"),
+  fInpHistoName("inphisto"),
+  fInpHistoName2("inphisto2"),
+  fHistoDim(_histo0),
+  fH1F(NULL), fH2F(NULL), fH2F_2(NULL), fH2F_ratio(NULL)
+{
+  if (set_method != _calcNone) this->setMethod(set_method,fDepth);
+  if (set_calibtype.Length()==0) {
+    std::cout << "Error: HistoDef::HistoDef set_calibtype cannot be empty\n"
+	      << "Setting to LED\n";
+    fCalibType="LED";
+  }
+  if (!checkDetector(std::string(fDetector.Data()),fDepth)) {
+    std::cout << "\n\tHistoDef_t::HistoDef_t error\n";
+  }
+}
+
+// -------------------------------------------------------------
+
+HistoDef_t::HistoDef_t(const InputCards_t &ic, TMethod_t set_method) :
+  fCalibType(ic.calibType()),
+  fDetector(ic.detector().c_str()),
+  fMethod(set_method),
+  fSpecMethod(),
+  fDepth(ic.depth()),
+  fPlotTitle("title"),
+  fInpHistoName("inphisto"),
+  fInpHistoName2("inphisto2"),
+  fHistoDim(_histo0),
+  fH1F(NULL), fH2F(NULL), fH2F_2(NULL), fH2F_ratio(NULL)
+{
+  if (set_method != _calcNone) this->setMethod(set_method,fDepth);
+  if (!checkDetector(std::string(fDetector.Data()),fDepth)) {
+    std::cout << "\n\tHistoDef_t::HistoDef_t(InputCards_t) error\n";
+  }
+}
+
+// -------------------------------------------------------------
+
 HistoDef_t::HistoDef_t(const HistoDef_t &d, TString cloneTag) :
   fCalibType(d.fCalibType),
+  fDetector(d.fDetector),
   fMethod(d.fMethod),
   fSpecMethod(d.fSpecMethod),
   fDepth(d.fDepth),
@@ -448,7 +670,7 @@ HistoDef_t::HistoDef_t(const HistoDef_t &d, TString cloneTag) :
 
 TString HistoDef_t::getMethodName() const
 {
-  if (fSpecMethod.method()==_specNone) return GetMethodName(fMethod);
+  if (fSpecMethod.method()==_specNone) return GetMethodName(fMethod,1);
   TString name = fSpecMethod.name() + TString("_") + GetMethodName(fMethod,1);
   return name;
 }
@@ -594,6 +816,12 @@ int HistoDef_t::setMethod(TMethod_t set_method, int set_depth) {
     std::cout <<   "set_method=" << GetMethodName(set_method)
 	      << ", set_depth=" << set_depth << "\n";
   }
+
+  if (fDetector!="HF") {
+    fPlotTitle.ReplaceAll("HF",fDetector);
+    fInpHistoName.ReplaceAll("HF",fDetector);
+    fInpHistoName2.ReplaceAll("HF",fDetector);
+  }
   return 1;
 }
 
@@ -691,6 +919,13 @@ int HistoDef_t::loadHisto(TFile &f, TString setTag)
 		<< "> failed\n";
       return 0;
     }
+    if (fH1F->GetNbinsX()>2000) {
+      std::cout << "HistoDef_t::loadHisto: loaded 1D histogram "
+		<< fH1F->GetName()
+		<< " with an unexpectedly large number of bins : "
+		<< fH1F->GetNbinsX() << "\n";
+      return 0;
+    }
     if (setTag.Length()) {
       TH1F *h1=fH1F;
       fH1F=(TH1F*)h1->Clone(h1->GetName() + setTag);
@@ -704,6 +939,9 @@ int HistoDef_t::loadHisto(TFile &f, TString setTag)
     return 1;
   }
   else if (fHistoDim==_histo2F) {
+    std::cout << "Loading histo2F: " << fInpHistoName << " and "
+	      << fInpHistoName2 << "\n";
+
     fH2F=(TH2F*)f.Get(fInpHistoName);
     if (!fH2F) {
       std::cout << "HistoDef_t::loadHisto: loading of <"
@@ -711,6 +949,14 @@ int HistoDef_t::loadHisto(TFile &f, TString setTag)
 		<< "> failed\n";
       return 0;
     }
+    if ((fH2F->GetNbinsX()>2000) || (fH2F->GetNbinsY()>2000)) {
+      std::cout << "HistoDef_t::loadHisto: loaded 2D histogram "
+		<< fH2F->GetName()
+		<< " with an unexpectedly large number of bins : "
+		<< fH2F->GetNbinsX() << " x " << fH2F->GetNbinsY() << "\n";
+      return 0;
+    }
+    //std::cout << "fH2F " << fH2F->GetName() << " dim: "<< fH2F->GetNbinsX() << " x " << fH2F->GetNbinsY() << "\n";
     if (fInpHistoName2.Length()) {
       fH2F_2=(TH2F*)f.Get(fInpHistoName2);
       if (!fH2F_2) {
@@ -802,8 +1048,9 @@ int HistoDef_t::loadHisto(TFile &f, TString setTag)
 // -------------------------------------------------------------
 
 std::ostream& operator<< (std::ostream &out, const HistoDef_t &hd) {
-  out << "HistoDef_t:: calibType=" << hd.fCalibType << ", "
-      << " depth=" << hd.fDepth << "\n";
+  out << "HistoDef_t:: calibType=" << hd.fCalibType
+      << ", detector=" << hd.fDetector
+      << ", depth=" << hd.fDepth << "\n";
   out << " method=" << hd.fMethod << ", specMethod=(" << hd.fSpecMethod;
   out << "),\n plotTile=<" << hd.fPlotTitle << ">\n";
   out << " inpHistoName =<" << hd.fInpHistoName  << ">\n";

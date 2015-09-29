@@ -35,8 +35,18 @@ typedef enum {
 
 typedef enum { _histo0, _histo1F, _histo1D, _histo2F, _histo2D } THistoDim_t;
 
-typedef enum { _getNone, _getHisto, _getMean, _getLast, _getUnknown }
-  TAction_t;
+typedef enum { _sdHB1, _sdHB2,
+	       _sdHE1, _sdHE2, _sdHE3,
+	       _sdHO4,
+	       _sdHF1, _sdHF2,
+	       _sdLast,
+	       _sdUnknown }
+  TSubDet_t;
+
+typedef enum { _specNone=0, _specAvgPhi,
+	       _specLast,
+	       _specUnknown
+} TSpecMethod_t;
 
 typedef enum { _specNone=0, _specAvgPhi,
 	       _specLast,
@@ -60,8 +70,11 @@ void CheckSpecMethodConversion(int shortVersion=0);
 TString GetHistoDimName(THistoDim_t hd);
 THistoDim_t GetHistoDim(TString str);
 
-TString GetActionName(TAction_t a);
-TAction_t GetAction(TString str);
+TString GetSubDetFullName(TSubDet_t sd);
+TString GetSubDetName(TSubDet_t sd);
+int GetSubDetDepth(TSubDet_t sd);
+TSubDet_t GetSubDet(TString str);
+TSubDet_t GetSubDet(TString str, int depth);
 
 // -------------------------------------------------------------
 
@@ -80,6 +93,15 @@ inline TSpecMethod_t nextSpecMethod(TSpecMethod_t m) {
 }
 
 inline void next(TSpecMethod_t &m) { m=nextSpecMethod(m); }
+
+// -------------------------------------------------------------
+
+inline TSubDet_t nextSubDet(TSubDet_t sd) {
+  if (sd<_sdLast) sd=TSubDet_t(int(sd)+1);
+  return sd;
+}
+
+inline void next(TSubDet_t &sd) { sd=nextSubDet(sd); }
 
 // -------------------------------------------------------------
 
@@ -125,21 +147,25 @@ TString GetSpecMethodName(SpecMethodDef_t method, int shortVersion=0);
 // -------------------------------------------------------------
 
 struct HistoDef_t {
-  TString fCalibType;
+  TString fCalibType, fDetector;
   TMethod_t fMethod;
   SpecMethodDef_t fSpecMethod;
   int fDepth;
   TString fPlotTitle;
   TString fInpHistoName, fInpHistoName2;
   THistoDim_t fHistoDim;
-  //TAction_t fAction;
   TH1F *fH1F;
   TH2F *fH2F, *fH2F_2, *fH2F_ratio;
 public:
-  HistoDef_t(TString set_calibtype="LED", TMethod_t set_method=_calcNone, int set_depth=-1);
+  HistoDef_t(TString set_calibtype="LED", TString set_detector="HF",
+	     TMethod_t set_method=_calcNone, int set_depth=-1);
+  HistoDef_t(TString set_calibtype="LED", TSubDet_t sd=_sdHF1,
+	     TMethod_t set_method=_calcNone);
+  HistoDef_t(const InputCards_t &ic, TMethod_t set_method=_calcNone);
   HistoDef_t(const HistoDef_t &d, TString cloneTag="");
 
   TString calibType() const { return fCalibType; }
+  TString detector() const { return fDetector; }
   TMethod_t method() const { return fMethod; }
   SpecMethodDef_t specMethod() const { return fSpecMethod; }
   THistoDim_t histoDim() const { return fHistoDim; }

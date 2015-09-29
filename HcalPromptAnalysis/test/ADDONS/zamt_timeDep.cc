@@ -16,7 +16,7 @@
 int main(int argc, char *argv[])
 {
   if (argc<2) {
-    std::cout << "use: ./zamt_hf5.exe inputCardsFile [method] [-calib-VALUE] [-detector NAMEDEPTH] [-run-range runNumMin runNumMax] [-run-period runDateMin runDateMax] [other_options]\n";
+    std::cout << "use: ./zamt_timeDep.exe inputCardsFile [method] [-calib-VALUE] [-detector NAMEDEPTH] [-run-range runNumMin runNumMax] [-run-period runDateMin runDateMax] [other_options]\n";
     std::cout << "  VALUE for calib LED (default), LASER or PEDESTAL\n";
     std::cout << "  date format year/month/day\n";
     ListMethods(1);
@@ -26,7 +26,8 @@ int main(int argc, char *argv[])
     std::cout << "     -suppress-errorX    (here X=0,1)\n";
     std::cout << "     -output-format FORMAT (here FORMAT='gif','png',etc.)\n";
     std::cout << "     -output-dir NAME\n";
-    std::cout << "     -output-file-name NAME  (file for canvas collection)\n";
+    std::cout << "     -output-file-name NAME  (file name for canvas collection)\n";
+    std::cout << "     -iphi-all\n";
     std::cout << "     -iphi-value VALUE\n";
     std::cout << "     -ieta-value VALUE\n";
     std::cout << "     -iphi-range valueMin valueMax valueStep\n";
@@ -34,15 +35,16 @@ int main(int argc, char *argv[])
     std::cout << "     -iphi-set count val1 ... valCount\n";
     std::cout << "     -ieta-set count val1 ... valCount\n";
     std::cout << "     -spec-method-avgPhi\n";
+    std::cout << "     -save-all    (whether to save all produced canvases)\n";
     std::cout << "  VALUE for iphi = iphiMin .. iphiMax (TBD)\n";
     std::cout << "  VALUE for ieta = iphiMin .. iphiMax (TBD)\n";
     gSystem->Exit(1);
   }
   std::string fname=argv[1];
-  TMethod_t method=_calcAmp;
+  TMethod_t user_method=_calcNone;
   if ((argc>=3) && (argv[2][0]!='-')) {
-    method=GetMethod(argv[2]);
-    if (method==_calcUnknown) {
+    user_method=GetMethod(argv[2]);
+    if (user_method==_calcUnknown) {
       std::cout << "error in the method name\n";
       gSystem->Exit(1);
     }
@@ -52,9 +54,10 @@ int main(int argc, char *argv[])
   std::string user_calibration="undef";
   std::string user_detector;
   int user_depth=-1;
+  int user_saveAll=-1;
   InputRuns_t *inpRunMin=NULL, *inpRunMax=NULL;
   std::vector<int> user_ieta,user_iphi;
-  TString rootFileName="collection.root";
+  TString rootFileName;
   TSpecMethod_t user_specMethod=_specNone;
   for (int ia=2; ia<argc; ia++) {
     std::string s(argv[ia]);
@@ -153,6 +156,12 @@ int main(int argc, char *argv[])
       std::cout << " ** save canvases to <" << rootFileName << ">\n";
       ia++;
     }
+    else if (s.find("-iphi-all")!=std::string::npos) {
+      std::cout << " ** iphi-all detected\n";
+      for (int i=1; i<=cIPhiMax; i++) {
+	user_iphi.push_back(i);
+      }
+    }
     else if (s.find("-iphi-value")!=std::string::npos) {
       if (ia+1>=argc) { std::cout << "missing argument for -iphi-value\n"; gSystem->Exit(1); }
       int value=atoi(argv[ia+1]);
@@ -216,10 +225,31 @@ int main(int argc, char *argv[])
       std::sort(user_ieta.begin(),user_ieta.end());
       ia--;
     }
-    else if (s.find("-spec-method-avgphi")!=std::string::npos) {
+    else if ((s.find("-spec-method-avgphi")!=std::string::npos) ||
+	     (s.find("-spec-method-avgPhi")!=std::string::npos)) {
       std::cout << " ** spec_method_avgphi=1\n";
       user_specMethod=_specAvgPhi;
     }
+    else if (s.find("-save-all")!=std::string::npos) {
+      user_saveAll=1;
+      std::cout << " ** saveAll detected\n";
+    }
+  }
+
+  // Check if date auto-set is needed
+  if (0) if (!inpRunMin && !inpRunMax) {
+    TDatime now;
+    UInt_t timeNow=now.Convert();
+    // start period - 90 days ago
+    UInt_t nDays=90;
+    UInt_t timeStart= timeNow - 60 * 60 * 24 * nDays;
+    TDatime start(timeStart);
+    inpRunMin= new InputRuns_t();
+    inpRunMax= new InputRuns_t();
+    inpRunMin->setDate(start.AsSQLString());
+    inpRunMax->setDate(now.AsSQLString());
+    std::cout << " +-+ auto set period for " << nDays << " days: from "
+	      << *inpRunMin << " to " << *inpRunMax << "\n";
   }
 
   InputCards_t ic;
@@ -240,35 +270,133 @@ int main(int argc, char *argv[])
   if (ok && (user_detector.size()>0)) ok=ic.detector(user_detector); // may change the depth
   if (!ok) gSystem->Exit(1);
 
-  HERE("try to make the plot");
+  // Container for the avg-phi canvases
+  std::vector<TCanvas*> cV_avgPhi;
+  HistoDef_t *global_hd=NULL;
 
-  HistoDef_t hd(ic.calibType(),ic.detector().c_str(),method,ic.depth());
-  //std::cout << "hd(0) " << hd;
-  if (!hd.setSpecMethod(user_specMethod,ic)) {
-    std::cout << "failed to prepare spec method\n";
-    gSystem->Exit(1);
-  }
-  //std::cout << "hd(1) " << hd;
+  // loop over the subdetectors
+  for (TSubDet_t sd=_sdHB1; sd<_sdLast; next(sd)) {
+    if (user_depth!=-1) {
+      std::cout << "user_depth=" << user_depth << " is fixed. Probing...";
+      if (user_depth!=GetSubDetDepth(sd)) {
+	std::cout << " skip " << GetSubDetFullName(sd) << "\n";
+	continue;
+      }
+    }
+    if (user_detector.size()>0) {
+      std::cout << "user_detector=<" << user_detector << "> is fixed. Probing...";
+      if (user_detector!=GetSubDetName(sd)) {
+	std::cout << " skip " << GetSubDetFullName(sd) << "\n";
+	continue;
+      }
+    }
 
-  std::vector<TCanvas*>* cV= MakeTimeDepPlot(hd, ic, plotOpt);
-  if (!cV) std::cout << "Failed to produce time-dependency plots\n";
-  else {
-    std::cout << "MakeTimeDepPlot OK\n";
-    TFile fout(rootFileName,"recreate");
-    if (!fout.IsOpen()) {
-      std::cout << "Failed to create a file <" << rootFileName << ">\n";
+    std::cout << "Working with " << GetSubDetFullName(sd) << "\n";
+    ic.depth(GetSubDetDepth(sd));
+    ic.detector(GetSubDetName(sd).Data());
+
+    TMethod_t methodStart=(user_method==_calcNone) ? _calcAmp : user_method;
+    TMethod_t methodLast =(user_method==_calcNone) ? _calcRatio : user_method;
+    std::cout << "methodStart=" << GetMethodName(methodStart)
+	      << ", methodLast=" << GetMethodName(methodLast) << "\n";
+    for (TMethod_t method= methodStart; method<=methodLast; next(method)) {
+      std::cout << "work with method=" << GetMethodName(method) << "\n";
+
+      HistoDef_t hd(ic,method);
+      //std::cout << "hd(0) " << hd;
+      TSpecMethod_t specMethodStart=user_specMethod;
+      TSpecMethod_t specMethodLast =user_specMethod;
+      std::cout << "specMethodStart=" << GetSpecMethodName(specMethodStart)
+		<< ", specMethodLast=" << GetSpecMethodName(specMethodLast)
+		<< "\n";
+      std::vector<int> storeIPhiVec= ic.iphi();
+      TString storeOutDir= plotOpt.outDirName();
+      TString storeRootFileName= rootFileName;
+      // loop over special methods
+      for (TSpecMethod_t specMethod= specMethodStart;
+	   specMethod<=specMethodLast; next(specMethod)) {
+
+	if (!hd.setSpecMethod(specMethod,ic)) {
+	  std::cout << "failed to prepare spec method\n";
+	  gSystem->Exit(1);
+	}
+	if (global_hd!=NULL) delete global_hd;
+	global_hd= new HistoDef_t(hd,"global_");
+	//std::cout << "hd(1) " << hd;
+
+	// Construct output directory
+	TString extraTag=TString("-") +
+	                 GetSubDetFullName(sd) + TString("-")
+	                 + hd.getMethodName();
+	TString outDir=plotOpt.outDirName() + TString("/dir") + extraTag;
+	plotOpt.outDirName(outDir);
+	rootFileName.ReplaceAll(".root",extraTag+TString(".root"));
+	std::cout << "outDir=" << outDir << ", rootFileName=<"
+		  << rootFileName << ">\n";
+
+	HERE("try to make the plot");
+	std::vector<TCanvas*>* cV= MakeTimeDepPlot(hd, ic, plotOpt);
+	if (!cV) std::cout << "Failed to produce time-dependency plots\n";
+	else {
+	  std::cout << "MakeTimeDepPlot OK\n";
+	}
+
+	// if needed save the canvases
+	if (cV && (rootFileName.Length()>0)) {
+	  TFile fout(rootFileName,"recreate");
+	  if (!fout.IsOpen()) {
+	    std::cout << "Failed to create a file <" << rootFileName << ">\n";
+	  }
+	  else {
+	    for (unsigned int iCanv=0; iCanv<cV->size(); iCanv++) {
+	      cV->at(iCanv) -> Write();
+	    }
+	    fout.Close();
+	    std::cout << "File <" << fout.GetName() << "> created\n";
+	  }
+	}
+
+	// create index pages for each case
+	if (cV && (user_saveAll==1)) {
+	  int res= createWebPage(*cV,hd,ic,plotOpt);
+	  if (!res) {
+	    std::cout << "failed to created the webPage\n";
+	    gSystem->Exit(1);
+	  }
+	}
+
+	// collect only interesting canvases
+	if (cV && (specMethod==_specAvgPhi)) {
+	  for (unsigned int i=0; i<cV->size(); i++) {
+	    TString chkName= cV->at(i)->GetName();
+	    if (chkName.Index("iphi-1111")!=-1) {
+	      cV_avgPhi.push_back(cV->at(i));
+	    }
+	    else {
+	      delete cV->at(i);
+	    }
+	  }
+	}
+
+	// restore initial values
+	ic.edit_iphi()= storeIPhiVec;
+	plotOpt.outDirName(storeOutDir);
+	rootFileName= storeRootFileName;
+      } // specMethod
+    } // method
+  } // subdet
+
+  if (cV_avgPhi.size()!=0) {
+    if (!global_hd) {
+      std::cout << "would save cV_avgPhi, but global_hd is null\n";
     }
     else {
-      for (unsigned int iCanv=0; iCanv<cV->size(); iCanv++) {
-	cV->at(iCanv) -> Write();
+      int res= createWebPage(cV_avgPhi,*global_hd,ic,plotOpt);
+      if (!res) {
+	std::cout << "failed to created the webPage\n";
+	gSystem->Exit(1);
       }
-      fout.Close();
-      std::cout << "File <" << fout.GetName() << "> created\n";
     }
-  }
-
-  if (cV) {
-    int res= createWebPage(*cV,hd,ic,plotOpt);
   }
 
   std::cout << "exiting\n";
