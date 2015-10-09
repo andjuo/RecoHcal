@@ -133,6 +133,7 @@ TSpecMethod_t GetSpecMethod(TString str) {
   // amp, tsn, tsx, width, ratio are at the end
   if (str.Index("avgphi")!=-1) method=_specAvgPhi;
   else if (str.Index("specnone")!=-1) method=_specNone;
+  else if (str.Index("spec-none")!=-1) method=_specNone;
   else if (str.Index("speclast")!=-1) method=_specLast;
   else if (str.Index("specunknown")!=-1) method=_specUnknown;
   else {
@@ -147,7 +148,7 @@ TSpecMethod_t GetSpecMethod(TString str) {
 void ListSpecMethods(int shortVersion)
 {
   std::cout << "available spec methods (as strings): ";
-  for (TSpecMethod_t m=_specAvgPhi; m!=_specLast; next(m)) {
+  for (TSpecMethod_t m=_specNone; m!=_specLast; next(m)) {
     std::cout << " " << GetSpecMethodName(m,shortVersion);
   }
   std::cout << "\n";
@@ -158,7 +159,7 @@ void ListSpecMethods(int shortVersion)
 void CheckSpecMethodConversion(int shortVersion)
 {
   std::cout << "available special methods (as strings):\n";
-  for (TSpecMethod_t m=_specAvgPhi; m!=_specLast; next(m)) {
+  for (TSpecMethod_t m=_specNone; m!=_specLast; next(m)) {
     std::cout << "i=" << (int(m)-int(_specAvgPhi)) << "\n";
     std::cout << " " << GetSpecMethodName(m,shortVersion) << "\n";
     std::cout << " " << GetSpecMethodName(GetSpecMethod(GetSpecMethodName(m,shortVersion)),shortVersion) << "\n";
