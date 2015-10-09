@@ -34,7 +34,8 @@ int main(int argc, char *argv[])
     std::cout << "     -ieta-range valueMin valueMax valueStep\n";
     std::cout << "     -iphi-set count val1 ... valCount\n";
     std::cout << "     -ieta-set count val1 ... valCount\n";
-    std::cout << "     -spec-method-avgPhi\n";
+    std::cout << "     -spec-avgPhi (activated by default)\n";
+    std::cout << "     -spec-none   (deactivate avgPhi)\n";
     std::cout << "     -save-all    (whether to save all produced canvases)\n";
     std::cout << "  VALUE for iphi = iphiMin .. iphiMax (TBD)\n";
     std::cout << "  VALUE for ieta = iphiMin .. iphiMax (TBD)\n";
@@ -58,7 +59,7 @@ int main(int argc, char *argv[])
   InputRuns_t *inpRunMin=NULL, *inpRunMax=NULL;
   std::vector<int> user_ieta,user_iphi;
   TString rootFileName;
-  TSpecMethod_t user_specMethod=_specNone;
+  TSpecMethod_t user_specMethod=_specUnknown;
   for (int ia=2; ia<argc; ia++) {
     std::string s(argv[ia]);
     if (s.find("-calib-")!=std::string::npos) {
@@ -225,10 +226,15 @@ int main(int argc, char *argv[])
       std::sort(user_ieta.begin(),user_ieta.end());
       ia--;
     }
-    else if ((s.find("-spec-method-avgphi")!=std::string::npos) ||
-	     (s.find("-spec-method-avgPhi")!=std::string::npos)) {
-      std::cout << " ** spec_method_avgphi=1\n";
-      user_specMethod=_specAvgPhi;
+    else if (s.find("-spec")!=std::string::npos) {
+      user_specMethod=GetSpecMethod(s);
+      std::cout << " ** spec_method=<" << GetSpecMethodName(user_specMethod)
+		<< ">\n";
+      if (user_specMethod==_specUnknown) {
+	std::cout << " -- detection error\n";
+	ListSpecMethods(1);
+	gSystem->Exit(3);
+      }
     }
     else if (s.find("-save-all")!=std::string::npos) {
       user_saveAll=1;
@@ -304,8 +310,10 @@ int main(int argc, char *argv[])
 
       HistoDef_t hd(ic,method);
       //std::cout << "hd(0) " << hd;
-      TSpecMethod_t specMethodStart=user_specMethod;
-      TSpecMethod_t specMethodLast =user_specMethod;
+      TSpecMethod_t specMethodStart=
+	(user_specMethod==_specUnknown) ? _specAvgPhi : user_specMethod;
+      TSpecMethod_t specMethodLast =
+	(user_specMethod==_specUnknown) ? _specAvgPhi : user_specMethod;
       std::cout << "specMethodStart=" << GetSpecMethodName(specMethodStart)
 		<< ", specMethodLast=" << GetSpecMethodName(specMethodLast)
 		<< "\n";
