@@ -1,0 +1,86 @@
+# On branch shifters_cmt7
+# Changes not staged for commit:
+#   (use "git add/rm <file>..." to update what will be committed)
+#   (use "git checkout -- <file>..." to discard changes in working directory)
+#
+#	[31mmodified:   HcalPromptAnalysis/src/VeRawAnalyzer.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/HistoDef.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/HistoDef.h[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/Makefile[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/ObjClass.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/ObjClass.h[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/ShowTimeDep.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/ShowTimeDep.h[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/compile.csh[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/helpWebPage.h[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/inputcards[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/inputcards.orig[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/inputcards4[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/inputcards4a[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/zamt_hf.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/zamt_hf2.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/zamt_hf3.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/zamt_hf4.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/zamt_hf5.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/ADDONS/zamt_timeDep.cc[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/HcalRemoteMonitoringNewNew.csh[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/HcalRemoteMonitoringNewNewRoot.csh[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/RemoteMonitoringMAP.cc[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/batch.csh[m
+#	[31mdeleted:    HcalPromptAnalysis/test/RDM/batch_root.csh[m
+#	[31mdeleted:    HcalPromptAnalysis/test/RDM/checkGlobal.sql[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/compile.csh[m
+#	[31mdeleted:    HcalPromptAnalysis/test/RDM/copy_rdm_to_eos.csh[m
+#	[31mdeleted:    HcalPromptAnalysis/test/RDM/datasets[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/myselect_led.csh[m
+#	[31mdeleted:    HcalPromptAnalysis/test/RDM/olddatasets[m
+#	[31mdeleted:    HcalPromptAnalysis/test/RDM/parce_newsql.csh[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/remoteMonitoring_LASER_cfg.py[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/remoteMonitoring_LED_cfg.py[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/remoteMonitoring_PEDESTAL_cfg.py[m
+#	[31mdeleted:    HcalPromptAnalysis/test/RDM/runList.sh[m
+#	[31mmodified:   HcalPromptAnalysis/test/RDM/update_rdmpage_new.csh[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/GLOBAL_EOS.sh[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/Global.root[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/PYTHON_runsets_110615/Reco_246920_cfg.py[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/PYTHON_runsets_test/Reco_246951_cfg.py[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/PYTHON_runsets_test/Reco_248036_cfg.py[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/RemoteMonitoringGLOBAL.cc[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/RemoteMonitoringMAP_Global.cc[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/TXT_runsets_110615/run_246920[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/TXT_runsets_test/run_246951[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/TXT_runsets_test/run_248036[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/a.py.end[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/batchjobs.csh[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/file_lists.csh[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/global_log[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/header_GLOBAL_EOS.txt[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/run_batch.csh[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/run_interactive.csh[m
+#	[31mmodified:   HcalPromptAnalysis/test/SHIFTER_VALIDATION/runlist_test[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/runsets_110615[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/runsets_110615.orig[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/runsets_test[m
+#	[31mdeleted:    HcalPromptAnalysis/test/SHIFTER_VALIDATION/test.csh[m
+#	[31mdeleted:    HcalPromptAnalysis/test/remoteMonitoring_LEDLOCAL_cfg.py[m
+#	[31mmodified:   HcalPromptAnalysis/test/remoteMonitoring_LED_cfg.py[m
+#	[31mdeleted:    README.md[m
+#
+# Untracked files:
+#   (use "git add <file>..." to include in what will be committed)
+#
+#	[31mHcalPromptAnalysis/.admin/[m
+#	[31mHcalPromptAnalysis/test/RDM/.__afs99EC[m
+#	[31mHcalPromptAnalysis/test/RDM/HcalRemoteMonitoringNewNewInt.csh[m
+#	[31mHcalPromptAnalysis/test/RDM/LASER_LIST/[m
+#	[31mHcalPromptAnalysis/test/RDM/LED_LIST/[m
+#	[31mHcalPromptAnalysis/test/RDM/LOG/[m
+#	[31mHcalPromptAnalysis/test/RDM/LOG1/[m
+#	[31mHcalPromptAnalysis/test/RDM/PEDESTAL_LIST/[m
+#	[31mHcalPromptAnalysis/test/SHIFTER_VALIDATION/Readme[m
+#	[31mHcalPromptAnalysis/test/SHIFTER_VALIDATION/a.py.beg.working[m
+#	[31mHcalPromptAnalysis/test/SHIFTER_VALIDATION/a.py.begCosmics[m
+#	[31mHcalPromptAnalysis/test/SHIFTER_VALIDATION/a.py.end.working[m
+#	[31mHcalPromptAnalysis/test/SHIFTER_VALIDATION/a.py.endCosmics[m
+#	[31mdiff_master_cmt7.txt[m
+no changes added to commit (use "git add" and/or "git commit -a")
