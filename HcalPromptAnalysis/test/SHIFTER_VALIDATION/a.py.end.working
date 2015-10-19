@@ -1,48 +1,6 @@
-# Auto generated configuration file
-# using: 
-# Revision: 1.19 
-# Source: /local/reps/CMSSW/CMSSW/Configuration/Applications/python/ConfigBuilder.py,v 
-# with command line options: Reconstruction.py -s RAW2DIGI,RECO --filein file:gensimraw.root --eventcontent RECO --datatier RECO --conditions FrontierConditions_GlobalTag,auto:upgradePLS1 -n 10 --data --no_exec
-import FWCore.ParameterSet.Config as cms
-
-process = cms.Process('OKRECO')
-
-# import of standard configurations
-process.load('Configuration.StandardSequences.Services_cff')
-process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
-process.load('FWCore.MessageService.MessageLogger_cfi')
-process.load('Configuration.EventContent.EventContent_cff')
-process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
-process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff')
-process.load('Configuration.StandardSequences.RawToDigi_Data_cff')
-process.load('Configuration.StandardSequences.Reconstruction_Data_cff')
-process.load('Configuration.StandardSequences.EndOfProcess_cff')
-process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
-process.load('RecoLocalCalo.Configuration.hcalLocalReco_cff')
-
-process.maxEvents = cms.untracked.PSet(
-    input = cms.untracked.int32(-1)
+   )
 )
 
-# Input source
-process.source = cms.Source("PoolSource",
-    fileNames = cms.untracked.vstring(
-'/store/data/Run2015A/Commissioning/RAW/v1/000/248/036/00000/081DF2A8-B412-E511-A2ED-02163E0141C8.root',
-    ),
-    secondaryFileNames = cms.untracked.vstring()
-)
-
-process.options = cms.untracked.PSet(
-#        SkipEvent = cms.untracked.vstring('ProductNotFound')
-)
-
-# Production Info
-process.configurationMetadata = cms.untracked.PSet(
-    annotation = cms.untracked.string('Reconstruction.py nevts:10'),
-    name = cms.untracked.string('Applications'),
-    version = cms.untracked.string('$Revision: 1.19 $')
-)
-###########################################################################################################3
 process.Analyzer = cms.EDAnalyzer("VeRawAnalyzer",
                                   #
                                   Verbosity = cms.untracked.int32(0),
@@ -392,19 +350,17 @@ process.hcal_db_producer = cms.ESProducer("HcalDbProducer",
     dump = cms.untracked.vstring(''),
     file = cms.untracked.string('')
 )
-from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'GR_P_V54', '')
+process.load('Configuration.StandardSequences.RawToDigi_Data_cff')
+process.hcalDigis.FilterDataQuality = cms.bool(False)
+##process.hcalDigis.InputLabel = "hltFEDSelector"
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+process.GlobalTag.globaltag = 'GR_P_V41::All'
+process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
-#process.hcalDigis.InputLabel = "hltFEDSelector"
-
-# Path and EndPath definitions
-process.raw2digi_step = cms.Path(process.RawToDigi)
 process.ana = cms.Path(process.Analyzer)
 process.hcalDigis_step = cms.Path(process.hcalDigis)
-process.hcalDigis.FilterDataQuality = cms.bool(False)
-
-# Schedule definition
 process.schedule = cms.Schedule(process.hcalDigis_step,process.ana)
+#process.p = cms.Path(process.hcalDigis*process.Analyzer)
 
 process.MessageLogger = cms.Service("MessageLogger",
      categories   = cms.untracked.vstring(''),
@@ -412,6 +368,7 @@ process.MessageLogger = cms.Service("MessageLogger",
      debugModules = cms.untracked.vstring('*'),
      cout = cms.untracked.PSet(
          threshold = cms.untracked.string('WARNING'),
-	 WARNING = cms.untracked.PSet(limit = cms.untracked.int32(0))
+         WARNING = cms.untracked.PSet(limit = cms.untracked.int32(0))
      )
  )
+

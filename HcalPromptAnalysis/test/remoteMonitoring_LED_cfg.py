@@ -7,18 +7,8 @@ process = cms.Process("testAnalyzer")
 process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
 #process.load('FWCore.MessageService.MessageLogger_cfi')
 #process.load('Configuration.EventContent.EventContent_cff')
-#process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
-#process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff')
-
-process.load('Configuration.EventContent.EventContent_cff')
 process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
-process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff')
-process.load('Configuration.StandardSequences.RawToDigi_Data_cff')
-#process.load('Configuration.StandardSequences.Reconstruction_Data_cff')
-process.load('Configuration.StandardSequences.EndOfProcess_cff')
-process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
-#process.load('RecoLocalCalo.Configuration.hcalLocalReco_cff')
-
+#process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff')
 
 process.maxEvents = cms.untracked.PSet(
 #    input = cms.untracked.int32(3)
@@ -387,16 +377,13 @@ process.hcal_db_producer = cms.ESProducer("HcalDbProducer",
     dump = cms.untracked.vstring(''),
     file = cms.untracked.string('')
 )
-
+process.load('Configuration.StandardSequences.RawToDigi_Data_cff')
 process.hcalDigis.FilterDataQuality = cms.bool(False)
 process.hcalDigis.InputLabel = cms.InputTag("source")
 
-#process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
-#process.GlobalTag.globaltag = 'GR_P_V41::All'
-#process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
-
-from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'GR_P_V50', '')
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+process.GlobalTag.globaltag = 'GR_P_V41::All'
+process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
 
 process.p = cms.Path(process.hcalDigis*process.Analyzer)
 

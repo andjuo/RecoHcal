@@ -47,9 +47,9 @@ int main(int argc, char *argv[])
     
     TFile *hfile= new TFile( fname, "READ");
     // Cut [test][sub][depth]
-    double Cut0[7][5][5]={{{0.,0.,0.,0.,0.}, {0.,2.,1.0,0.,0.},{0.,2.,2.,1.,0.},{0.,0.,0.,0.,3.},{0.,2.,2.,0.,0.}},  //CapID
-                          {{0.,0.,0.,0.,0.},   {0.,7.,8.,0.,0.}, {0.,7.,9.,8.,0.},{0.,0.,0.,0.,7.},{0.,4.,15.,0.,0.}},  //Amplitude   
-			  {{0.,0.,0.,0.,0.},   {0.,3.,3.,0.,0.},    {0.,3.,3.,3.,0.},{0.,0.,0.,0.,3.},{0.,2.,2.,0.,0.}}, //Width
+    double Cut0[7][5][5]={{{0.,0.,0.,0.,0.}, {0.,1.,1.0,0.,0.},  {0.,1.,1.,1.,0.},   {0.,0.,0.,0.,1.}, {0.,1.,1.,0.,0.}},  //CapID
+                          {{0.,0.,0.,0.,0.}, {0.,11.,13.,0.,0.}, {0.,25.,6.,30.,0.}, {0.,0.,0.,0.,28.}, {0.,80.,40.,0.,0.}},  //Amplitude   
+			  {{0.,0.,0.,0.,0.}, {0.,3.,3.,0.,0.},   {0.,3.,3.,3.,0.},   {0.,0.,0.,0.,3.}, {0.,2.,2.,0.,0.}}, //Width
 			  {{0.,0.,0.,0.,0.}, {0.,0.4,0.4,0.,0.}, {0.,0.4,0.4,0.4,0.},{0.,0.,0.,0.,0.4},{0.,0.8,0.8,0.,0.}}, //Ratio
 			  {{0.,0.,0.,0.,0.}, {0.,4.7,4.7,0.,0.}, {0.,4.8,4.8,5.0,0.},{0.,0.,0.,0.,4.8},{0.,4.0,4.0,0.,0.}}, //TSn
 			  {{0.,0.,0.,0.,0.}, {0.,3.5,3.5,0.,0.}, {0.,4.0,4.0,4.0,0.},{0.,0.,0.,0.,3.},{0.,3.5,3.5,0.,0.}}, //TSx
@@ -201,7 +201,9 @@ int main(int argc, char *argv[])
       H_NumBadChanDepth[5][3][4] = (TH1F*)hfile->Get("h_sumTSmaxALS6");
       
       H_NumBadChanDepth[5][4][1] = (TH1F*)hfile->Get("h_sumTSmaxALS7");
-      H_NumBadChanDepth[5][4][2] = (TH1F*)hfile->Get("h_sumTSmaxALS8");                     
+      H_NumBadChanDepth[5][4][2] = (TH1F*)hfile->Get("h_sumTSmaxALS8");
+
+    gStyle->SetOptStat(110000);                     
                             
     for (int test=1;test<=5;test++) { //Test: 0, 
         for (int sub=1;sub<=4;sub++) {  //Subdetector: 1-HB, 2-HE, 3-HF, 4-HO
@@ -275,6 +277,7 @@ int main(int argc, char *argv[])
          }// end sub 
      }//end test	          
       
+    gStyle->SetOptStat(0);
 //================================================================================================================================ 
  
  
@@ -303,7 +306,7 @@ int main(int argc, char *argv[])
       MapNumBadChanDepth[0][4][1] = (TH2F*)hfile->Get("h_mapDepth1Error_HF");
       MapNumBadChanDepth[0][4][2] = (TH2F*)hfile->Get("h_mapDepth2Error_HF");  
      
-      MapNumBadChanFull[0] = (TH2F*)hfile->Get("h_mapDepth1Error_HB");  
+      MapNumBadChanFull[0] = (TH2F*) MapNumBadChanDepth[0][1][1]->Clone();  
       
       
       MapNumChanDepth[0][1][1] = (TH2F*)hfile->Get("h_mapDepth1_HB");     
@@ -318,7 +321,7 @@ int main(int argc, char *argv[])
       MapNumChanDepth[0][4][1] = (TH2F*)hfile->Get("h_mapDepth1_HF");     
       MapNumChanDepth[0][4][2] = (TH2F*)hfile->Get("h_mapDepth2_HF");
       
-      MapNumChanFull[0] = (TH2F*)hfile->Get("h_mapDepth1_HB"); 
+      MapNumChanFull[0] = (TH2F*) MapNumChanDepth[0][1][1]->Clone();
 
       
  //+++++++++++++++++++++++++++++  
@@ -338,7 +341,7 @@ int main(int argc, char *argv[])
       MapNumBadChanDepth[1][4][1] = (TH2F*)hfile->Get("h_2DsumADCAmplLS6");
       MapNumBadChanDepth[1][4][2] = (TH2F*)hfile->Get("h_2DsumADCAmplLS7");  
      
-      MapNumBadChanFull[1] = (TH2F*)hfile->Get("h_2DsumADCAmplLS1");  
+      MapNumBadChanFull[1] = (TH2F*) MapNumBadChanDepth[1][1][1]->Clone();  
       
       
       MapNumChanDepth[1][1][1] = (TH2F*)hfile->Get("h_2D0sumADCAmplLS1");     
@@ -353,7 +356,7 @@ int main(int argc, char *argv[])
       MapNumChanDepth[1][4][1] = (TH2F*)hfile->Get("h_2D0sumADCAmplLS6");     
       MapNumChanDepth[1][4][2] = (TH2F*)hfile->Get("h_2D0sumADCAmplLS7");
       
-      MapNumChanFull[1] = (TH2F*)hfile->Get("h_2D0sumADCAmplLS1"); 
+      MapNumChanFull[1] = (TH2F*) MapNumChanDepth[1][1][1]->Clone();
            
 //+++++++++++++++++++++++++++++  
 // Width  
@@ -371,7 +374,7 @@ int main(int argc, char *argv[])
       MapNumBadChanDepth[2][4][1] = (TH2F*)hfile->Get("h_2DsumAmplitudeLS6");
       MapNumBadChanDepth[2][4][2] = (TH2F*)hfile->Get("h_2DsumAmplitudeLS7");    
       
-      MapNumBadChanFull[2] = (TH2F*)hfile->Get("h_2DsumAmplitudeLS1");
+      MapNumBadChanFull[2] = (TH2F*) MapNumBadChanDepth[2][1][1]->Clone(); 
       
       MapNumChanDepth[2][1][1] = (TH2F*)hfile->Get("h_2D0sumAmplitudeLS1");     
       MapNumChanDepth[2][1][2] = (TH2F*)hfile->Get("h_2D0sumAmplitudeLS2"); 
@@ -385,7 +388,7 @@ int main(int argc, char *argv[])
       MapNumChanDepth[2][4][1] = (TH2F*)hfile->Get("h_2D0sumAmplitudeLS6");     
       MapNumChanDepth[2][4][2] = (TH2F*)hfile->Get("h_2D0sumAmplitudeLS7");
       
-      MapNumChanFull[2] = (TH2F*)hfile->Get("h_2D0sumAmplitudeLS1");
+      MapNumChanFull[2] = (TH2F*) MapNumChanDepth[2][1][1]->Clone();
       
 //+++++++++++++++++++++++++++++  
 // Ratio   
@@ -403,7 +406,7 @@ int main(int argc, char *argv[])
       MapNumBadChanDepth[3][4][1] = (TH2F*)hfile->Get("h_2DsumAmplLS6");
       MapNumBadChanDepth[3][4][2] = (TH2F*)hfile->Get("h_2DsumAmplLS7"); 
       
-      MapNumBadChanFull[3] = (TH2F*)hfile->Get("h_2DsumAmplLS1");   
+      MapNumBadChanFull[3] = (TH2F*) MapNumBadChanDepth[3][1][1]->Clone(); 
       
       
       MapNumChanDepth[3][1][1] = (TH2F*)hfile->Get("h_2D0sumAmplLS1");     
@@ -418,7 +421,7 @@ int main(int argc, char *argv[])
       MapNumChanDepth[3][4][1] = (TH2F*)hfile->Get("h_2D0sumAmplLS6");     
       MapNumChanDepth[3][4][2] = (TH2F*)hfile->Get("h_2D0sumAmplLS7");
       
-      MapNumChanFull[3] = (TH2F*)hfile->Get("h_2D0sumAmplLS1");
+      MapNumChanFull[3] = (TH2F*) MapNumChanDepth[3][1][1]->Clone();
       
 //+++++++++++++++++++++++++++++  
 // Tmean   
@@ -436,7 +439,7 @@ int main(int argc, char *argv[])
       MapNumBadChanDepth[4][4][1] = (TH2F*)hfile->Get("h_2DsumTSmeanALS6");
       MapNumBadChanDepth[4][4][2] = (TH2F*)hfile->Get("h_2DsumTSmeanALS7");
       
-      MapNumBadChanFull[4] = (TH2F*)hfile->Get("h_2DsumTSmeanALS1");    
+      MapNumBadChanFull[4] = (TH2F*) MapNumBadChanDepth[4][1][1]->Clone();  
       
       
       MapNumChanDepth[4][1][1] = (TH2F*)hfile->Get("h_2D0sumTSmeanALS1");     
@@ -451,7 +454,7 @@ int main(int argc, char *argv[])
       MapNumChanDepth[4][4][1] = (TH2F*)hfile->Get("h_2D0sumTSmeanALS6");     
       MapNumChanDepth[4][4][2] = (TH2F*)hfile->Get("h_2D0sumTSmeanALS7");
       
-      MapNumChanFull[4] = (TH2F*)hfile->Get("h_2D0sumTSmeanALS1"); 
+      MapNumChanFull[4] = (TH2F*) MapNumChanDepth[4][1][1]->Clone(); 
       
 //+++++++++++++++++++++++++++++  
 // Tmax   
@@ -469,7 +472,7 @@ int main(int argc, char *argv[])
       MapNumBadChanDepth[5][4][1] = (TH2F*)hfile->Get("h_2DsumTSmaxALS6");
       MapNumBadChanDepth[5][4][2] = (TH2F*)hfile->Get("h_2DsumTSmaxALS7"); 
       
-      MapNumBadChanFull[5] = (TH2F*)hfile->Get("h_2DsumTSmaxALS1");   
+      MapNumBadChanFull[5] = (TH2F*) MapNumBadChanDepth[5][1][1]->Clone();   
            
       MapNumChanDepth[5][1][1] = (TH2F*)hfile->Get("h_2D0sumTSmaxALS1");     
       MapNumChanDepth[5][1][2] = (TH2F*)hfile->Get("h_2D0sumTSmaxALS2"); 
@@ -483,7 +486,7 @@ int main(int argc, char *argv[])
       MapNumChanDepth[5][4][1] = (TH2F*)hfile->Get("h_2D0sumTSmaxALS6");     
       MapNumChanDepth[5][4][2] = (TH2F*)hfile->Get("h_2D0sumTSmaxALS7");
       
-      MapNumChanFull[5] = (TH2F*)hfile->Get("h_2D0sumTSmaxALS1");
+      MapNumChanFull[5] = (TH2F*) MapNumChanDepth[5][1][1]->Clone(); 
                   
       int LSnumber = 0;
       
@@ -499,8 +502,12 @@ int main(int argc, char *argv[])
 	        if (sub==3) cONE->cd(k-3);
 	        if (sub==4) cHB->cd(k);            
 		MapNumBadChanDepth[test][sub][k]->Divide(MapNumBadChanDepth[test][sub][k],MapNumChanDepth[test][sub][k], 1, 1, "B");
-
-//		if (!((k==1)&&(sub==1)))  MapNumBadChanFull[test]->Add(MapNumBadChanDepth[test][sub][k]);
+                for (int x=1;x<=MapNumBadChanFull[test]->GetXaxis()->GetNbins();x++) {
+                   for (int y=1;y<=MapNumBadChanFull[test]->GetYaxis()->GetNbins(); y++) {
+	               double ccc1 =  MapNumBadChanDepth[test][sub][k]->GetBinContent(x,y);
+		       MapNumBadChanFull[test]->SetBinContent(x,y,MapNumBadChanFull[test]->GetBinContent(x,y) + ccc1);
+                   }//end y
+                }//esnd x
   		    
                 if (k == 1) MapNumBadChanDepth[test][sub][k]->SetTitle("Depth 1\b");
 		if (k == 2) MapNumBadChanDepth[test][sub][k]->SetTitle("Depth 2\b");
@@ -604,7 +611,7 @@ int main(int argc, char *argv[])
       HistNumBadChanDepth[0][4][1] = (TH1F*)hfile->Get("h_runnbadchannels_depth1_HF");
       HistNumBadChanDepth[0][4][2] = (TH1F*)hfile->Get("h_runnbadchannels_depth2_HF");    
        
-      HistNumBadChanFull[0] = (TH1F*)hfile->Get("h_runnbadchannels_depth1_HB");
+      HistNumBadChanFull[0] = (TH1F*) HistNumBadChanDepth[0][1][1]->Clone();
       
       HistCutNumBadChanDepth[0][1][1] = (TH1F*)hfile->Get("h_runnbadchannels_depth1_HB");
       HistCutNumBadChanDepth[0][1][2] = (TH1F*)hfile->Get("h_runnbadchannels_depth2_HB");
@@ -648,7 +655,7 @@ int main(int argc, char *argv[])
       HistNumBadChanDepth[1][4][1] = (TH1F*)hfile->Get("h_sumADCAmplperLS6");
       HistNumBadChanDepth[1][4][2] = (TH1F*)hfile->Get("h_sumADCAmplperLS7");
       
-      HistNumBadChanFull[1] = (TH1F*)hfile->Get("h_sumADCAmplperLS1");    
+      HistNumBadChanFull[1] = (TH1F*) HistNumBadChanDepth[1][1][1]->Clone();
       
       HistCutNumBadChanDepth[1][1][1] = (TH1F*)hfile->Get("h_sumCutADCAmplperLS1");
       HistCutNumBadChanDepth[1][1][2] = (TH1F*)hfile->Get("h_sumCutADCAmplperLS2");
@@ -692,7 +699,7 @@ int main(int argc, char *argv[])
       HistNumBadChanDepth[2][4][1] = (TH1F*)hfile->Get("h_sumAmplitudeperLS6");
       HistNumBadChanDepth[2][4][2] = (TH1F*)hfile->Get("h_sumAmplitudeperLS7");    
        
-      HistNumBadChanFull[2] = (TH1F*)hfile->Get("h_sumAmplitudeperLS1");    
+      HistNumBadChanFull[2] = (TH1F*) HistNumBadChanDepth[2][1][1]->Clone();  
       
       HistCutNumBadChanDepth[2][1][1] = (TH1F*)hfile->Get("h_sumCutAmplitudeperLS1");
       HistCutNumBadChanDepth[2][1][2] = (TH1F*)hfile->Get("h_sumCutAmplitudeperLS2");
@@ -735,7 +742,7 @@ int main(int argc, char *argv[])
       HistNumBadChanDepth[3][4][1] = (TH1F*)hfile->Get("h_sumAmplperLS6");
       HistNumBadChanDepth[3][4][2] = (TH1F*)hfile->Get("h_sumAmplperLS7");    
       
-      HistNumBadChanFull[3] = (TH1F*)hfile->Get("h_sumAmplperLS1");
+      HistNumBadChanFull[3] = (TH1F*) HistNumBadChanDepth[3][1][1]->Clone();
       
       HistCutNumBadChanDepth[3][1][1] = (TH1F*)hfile->Get("h_sumCutAmplperLS1");
       HistCutNumBadChanDepth[3][1][2] = (TH1F*)hfile->Get("h_sumCutAmplperLS2");
@@ -778,7 +785,7 @@ int main(int argc, char *argv[])
       HistNumBadChanDepth[4][4][1] = (TH1F*)hfile->Get("h_sumTSmeanAperLS6");
       HistNumBadChanDepth[4][4][2] = (TH1F*)hfile->Get("h_sumTSmeanAperLS7");    
             
-      HistNumBadChanFull[4] = (TH1F*)hfile->Get("h_sumTSmeanAperLS1");
+      HistNumBadChanFull[4] = (TH1F*) HistNumBadChanDepth[4][1][1]->Clone();
       
       HistCutNumBadChanDepth[4][1][1] = (TH1F*)hfile->Get("h_sumCutTSmeanAperLS1");
       HistCutNumBadChanDepth[4][1][2] = (TH1F*)hfile->Get("h_sumCutTSmeanAperLS2");
@@ -821,7 +828,7 @@ int main(int argc, char *argv[])
       HistNumBadChanDepth[5][4][1] = (TH1F*)hfile->Get("h_sumTSmaxAperLS6");
       HistNumBadChanDepth[5][4][2] = (TH1F*)hfile->Get("h_sumTSmaxAperLS7");    
       
-      HistNumBadChanFull[5] = (TH1F*)hfile->Get("h_sumTSmaxAperLS1");
+      HistNumBadChanFull[5] = (TH1F*) HistNumBadChanDepth[5][1][1]->Clone();
       
       HistCutNumBadChanDepth[5][1][1] = (TH1F*)hfile->Get("h_sumCutTSmaxAperLS1");
       HistCutNumBadChanDepth[5][1][2] = (TH1F*)hfile->Get("h_sumCutTSmaxAperLS2");
@@ -866,6 +873,12 @@ int main(int argc, char *argv[])
 //                gPad->SetLogy();      
 
 	        HistNumBadChanDepth[test][sub][k]->Divide(HistNumBadChanDepth[test][sub][k],HistNumChanDepth[test][sub][k], 1, 1, "B");	
+
+                for (int x=1;x<=HistNumBadChanFull[test]->GetXaxis()->GetNbins();x++) {
+	               double ccc1 =  HistNumBadChanDepth[test][sub][k]->GetBinContent(x);
+		       HistNumBadChanFull[test]->SetBinContent(x,HistNumBadChanFull[test]->GetBinContent(x) + ccc1);
+                }//esnd x
+
                 if (k == 1) HistNumBadChanDepth[test][sub][k]->SetTitle("Depth 1\b");
 		if (k == 2) HistNumBadChanDepth[test][sub][k]->SetTitle("Depth 2\b");
 		if (k == 3) HistNumBadChanDepth[test][sub][k]->SetTitle("Depth 3\b");
@@ -1328,8 +1341,8 @@ int main(int argc, char *argv[])
               htmlFile << "<br>"<< std::endl; 
        
        
-       	       if (test ==0) htmlFile << "<h2> 2a.  Number of bad channels per event distribution oin Run</h2>"<< std::endl;
-	       if (test ==0) htmlFile << "<h3> Legends:   </h3>"<< std::endl;
+       	       if (test ==0) htmlFile << "<h2> 2a.  Number of bad channels per event distribution in Run</h2>"<< std::endl;
+	       if (test ==0) htmlFile << "<h3> Legends: dots correspond to BAD LS candidates.  </h3>"<< std::endl;
 	       if (test ==0){
                     if (sub==1) htmlFile << " <img src=\"HistNBadChsHB.png\" />" << std::endl; 
                     if (sub==2) htmlFile << " <img src=\"HistNBadChsHE.png\" />" << std::endl; 
@@ -1337,14 +1350,15 @@ int main(int argc, char *argv[])
                     if (sub==4) htmlFile << " <img src=\"HistNBadChsHF.png\" />" << std::endl;
                }       
 	      
-	      if (test !=0) htmlFile << "<h2> 2. Estimator averaged over all events in the RUN for entries in overflow for corresponding histogram above </h2>"<< std::endl;
+//	      if (test !=0) htmlFile << "<h2> 2. Estimator averaged over all events in the RUN for entries in overflow for corresponding histogram above </h2>"<< std::endl;
+              if (test !=0) htmlFile << "<h2> 2. Estimator averaged over all events in the RUN </h2>"<< std::endl;
 	      if (test ==0) htmlFile << "<h2> 2b. Averaged number of bad channels for each LS </h2>"<< std::endl;
-              if (test !=0) htmlFile << "<h3> Channel legend: white - good, other colour - bad.  </h3>"<< std::endl;
+//              if (test !=0) htmlFile << "<h3> Channel legend: white - good, other colour - bad.  </h3>"<< std::endl;
 	      if (test ==0) {
-                 if (sub==1) htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: <td class=\"s6\" align=\"center\">"<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2).</td></h3>"<< std::endl;
-                 if (sub==2) htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2), "<<Cut0[test][sub][3]<<" (Depth3).</h3>"<< std::endl;
-	         if (sub==3) htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][4]<<" (Depth4)</h3>"<< std::endl;
-                 if (sub==4) htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2).</h3>"<< std::endl;
+                 if (sub==1) htmlFile << "<h3> Legends: dots selected with following cuts: <td class=\"s6\" align=\"center\">"<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2) correspond BAD LS.</td></h3>"<< std::endl;
+                 if (sub==2) htmlFile << "<h3> Legends: dots selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2), "<<Cut0[test][sub][3]<<" (Depth3) correspond BAD LS.</h3>"<< std::endl;
+	         if (sub==3) htmlFile << "<h3> Legends: dots selected with following cuts: "<<Cut0[test][sub][4]<<" (Depth4) correspond BAD LS.</h3>"<< std::endl;
+                 if (sub==4) htmlFile << "<h3> Legends: dots selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2) correspond BAD LS.</h3>"<< std::endl;
               }
               if (test==0){
                   if (sub==1) htmlFile << " <img src=\"HistNBCMNHB.png\" />" << std::endl; 
@@ -1394,10 +1408,10 @@ int main(int argc, char *argv[])
                   htmlFile << "<h3> Legend: dots correspond to BAD LS candidates.</h3>"<< std::endl;
               }
               if (test !=0){
-                 if (sub==1) htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: <td class=\"s6\" align=\"center\">"<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2).</td></h3>"<< std::endl;
-                 if (sub==2) htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2), "<<Cut0[test][sub][3]<<" (Depth3).</h3>"<< std::endl;
-	         if (sub==3) htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][4]<<" (Depth4)</h3>"<< std::endl;
-                 if (sub==4) htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2).</h3>"<< std::endl;
+                 if (sub==1) htmlFile << "<h3> Legends:  dots selected with following cuts: <td class=\"s6\" align=\"center\">"<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2) correspond BAD LS.</td></h3>"<< std::endl;
+                 if (sub==2) htmlFile << "<h3> Legends:  dots selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2), "<<Cut0[test][sub][3]<<" (Depth3) correspond BAD LS. </h3>"<< std::endl;
+	         if (sub==3) htmlFile << "<h3> Legends:  dots selected with following cuts: "<<Cut0[test][sub][4]<<" (Depth4) correspond BAD LS. </h3>"<< std::endl;
+                 if (sub==4) htmlFile << "<h3> Legends:  dots selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2) correspond BAD LS. </h3>"<< std::endl;
               }
               if (test==0){
                   if (sub==1) htmlFile << " <img src=\"HistPortHB.png\" />" << std::endl; 
@@ -1438,19 +1452,19 @@ int main(int argc, char *argv[])
               htmlFile << "<br>"<< std::endl;            
               if (sub==1) { 
 	          htmlFile << "<h2> 4.Lumisection Status for HB </h2>"<< std::endl;
-	          htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: <td class=\"s6\" align=\"center\">"<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2).</td></h3>"<< std::endl;
+	          htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: <td class=\"s6\" align=\"center\">"<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2). </td></h3>"<< std::endl;
 	      }  
               if (sub==2) {
 	          htmlFile << "<h2> 4.Lumisection Status for HE </h2>"<< std::endl;
-		  htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2), "<<Cut0[test][sub][3]<<" (Depth3).</h3>"<< std::endl;
+		  htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2), "<<Cut0[test][sub][3]<<" (Depth3). </h3>"<< std::endl;
               }
 	      if (sub==3) {
 	         htmlFile << "<h2> 4.Lumisection Status for HO </h2>"<< std::endl;
-		 htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][4]<<" (Depth4)</h3>"<< std::endl;
+		 htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][4]<<" (Depth4). </h3>"<< std::endl;
 	      }
               if (sub==4) {
 	          htmlFile << "<h2> 4.Lumisection Status for HF </h2>"<< std::endl; 
-	          htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2).</h3>"<< std::endl;
+	          htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2). </h3>"<< std::endl;
 	      }	  	      
 	      htmlFile << "<br>"<< std::endl;
               htmlFile << "<table>"<< std::endl;        

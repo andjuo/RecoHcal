@@ -1,20 +1,7 @@
 #how to run: cmsRun remoteMonitoring_LED_cfg.py 211659 file:/afs/cern.ch/work/d/dtlisov/private/Monitoring/data /afs/cern.ch/work/d/dtlisov/private/Monitoring/histos
 #how to run: cmsRun remoteMonitoring_LED_cfg.py 211659 /store/group/comm_hcal/USC /afs/cern.ch/work/d/dtlisov/private/Monitoring/histos
 import sys
-import FWCore.ParameterSet.Config as cms
-process = cms.Process('OKRECO')
 
-# import of standard configurations
-process.load('Configuration.StandardSequences.Services_cff')
-process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
-process.load('FWCore.MessageService.MessageLogger_cfi')
-process.load('Configuration.EventContent.EventContent_cff')
-process.load('Configuration.StandardSequences.GeometryRecoDB_cff')
-process.load('Configuration.StandardSequences.MagneticField_AutoFromDBCurrent_cff')
-process.load('Configuration.StandardSequences.Reconstruction_Data_cff')
-process.load('Configuration.StandardSequences.EndOfProcess_cff')
-process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff')
-process.load('RecoLocalCalo.Configuration.hcalLocalReco_cff')
 #runnumber = sys.argv[2][4:-5]
 
 runnumber = sys.argv[2]
@@ -24,6 +11,9 @@ histodir = sys.argv[4]
 print 'RUN = '+runnumber
 print 'Input file = '+rundir+'/USC_'+runnumber+'.root'
 print 'Output file = '+histodir+'/LED_'+runnumber+'.root'
+
+import FWCore.ParameterSet.Config as cms
+process = cms.Process("testAnalyzer")
 
 process.maxEvents = cms.untracked.PSet(
 #    input = cms.untracked.int32(1000)
@@ -128,24 +118,24 @@ process.Analyzer = cms.EDAnalyzer("VeRawAnalyzer",
                                   ratioHBMax = cms.double(0.94),
                                   ratioHEMin = cms.double(0.60),
                                   ratioHEMax = cms.double(0.95),
-                                  ratioHFMin = cms.double(0.16),
+                                  ratioHFMin = cms.double(0.32),
                                   ratioHFMax = cms.double(1.02),
                                   ratioHOMin = cms.double(0.20),
                                   ratioHOMax = cms.double(1.04),
                                   # -54 for  BAD HBHEHF channels from study on RMS of shapes
                                   #Verbosity = cms.untracked.int32(-54),
-                                  rmsHBMin = cms.double(0.7),
+                                  rmsHBMin = cms.double(0.9),
                                   rmsHBMax = cms.double(2.5),
                                   rmsHEMin = cms.double(0.7),
                                   rmsHEMax = cms.double(2.5),
                                   rmsHFMin = cms.double(0.1),
-                                  rmsHFMax = cms.double(3.1),
+                                  rmsHFMax = cms.double(3.0),
                                   rmsHOMin = cms.double(0.1),
                                   rmsHOMax = cms.double(3.1),
                                   # -55 for  BAD HBHEHF channels from study on TSmean of shapes
                                   #Verbosity = cms.untracked.int32(-55),
-                                  TSmeanHBMin = cms.double(1.0),
-                                  TSmeanHBMax = cms.double(6.0),
+                                  TSmeanHBMin = cms.double(2.5),
+                                  TSmeanHBMax = cms.double(5.5),
                                   TSmeanHEMin = cms.double(1.0),
                                   TSmeanHEMax = cms.double(5.2),
                                   TSmeanHFMin = cms.double(1.0),
@@ -154,8 +144,8 @@ process.Analyzer = cms.EDAnalyzer("VeRawAnalyzer",
                                   TSmeanHOMax = cms.double(5.6),
                                   # -55 for  BAD HBHEHF channels from study on TSmax of shapes
                                   #Verbosity = cms.untracked.int32(-55),
-                                  TSpeakHBMin = cms.double(1.5),
-                                  TSpeakHBMax = cms.double(6.5),
+                                  TSpeakHBMin = cms.double(2.2),
+                                  TSpeakHBMax = cms.double(5.5),
                                   TSpeakHEMin = cms.double(1.5),
                                   TSpeakHEMax = cms.double(6.5),
                                   TSpeakHFMin = cms.double(0.5),
@@ -164,11 +154,11 @@ process.Analyzer = cms.EDAnalyzer("VeRawAnalyzer",
                                   TSpeakHOMax = cms.double(8.5),
                                   # -56 for  BAD HBHEHOHF channels from study on ADC Amplitude
                                   #Verbosity = cms.untracked.int32(-56),
-                                  ADCAmplHBMin = cms.double(40.),
+                                  ADCAmplHBMin = cms.double(100.),
                                   ADCAmplHBMax = cms.double(3000.),
                                   ADCAmplHEMin = cms.double(70.),
                                   ADCAmplHEMax = cms.double(3000.),
-                                  ADCAmplHFMin = cms.double(40.),
+                                  ADCAmplHFMin = cms.double(30.),
                                   ADCAmplHFMax = cms.double(3000.),
                                   ADCAmplHOMin = cms.double(40.),
                                   ADCAmplHOMax = cms.double(3000.),
@@ -260,6 +250,15 @@ process.Analyzer = cms.EDAnalyzer("VeRawAnalyzer",
                                   flagabortgaprejected = cms.int32(1),
                                   bcnrejectedlow = cms.int32(3446),
                                   bcnrejectedhigh= cms.int32(3564),
+                                  #
+                                  # flag cpu time reducing
+                                  #=0-all plots, =1-optimized number of plots
+                                  flagcpuoptimization = cms.int32(1),
+                                  #
+                                  # flag for ask type of Normalization for CMT estimators:
+                                  #=0-normalizationOn#evOfLS;   =1-averageVariable-normalizationOn#entriesInLS;
+                                  flagestimatornormalization = cms.int32(1),
+                                  #
                                   #
                                   # cuts on Nbadchannels to see LS dependences:
                                   # Verbosity = cms.untracked.int32(-77),
@@ -384,15 +383,15 @@ process.Analyzer = cms.EDAnalyzer("VeRawAnalyzer",
 process.hcal_db_producer = cms.ESProducer("HcalDbProducer",
     dump = cms.untracked.vstring(''),
     file = cms.untracked.string('')
-)
-from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
-#process.load('Configuration.AlCa.GlobalTag_condDBv2')
-process.GlobalTag = GlobalTag(process.GlobalTag, 'GR_P_V54', '')
-
+  )
 process.load('Configuration.StandardSequences.RawToDigi_Data_cff')
 process.hcalDigis.FilterDataQuality = cms.bool(False)
 process.hcalDigis.InputLabel = cms.InputTag("source")
 				
+process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
+process.GlobalTag.globaltag = 'GR_P_V41::All'
+process.es_prefer_GlobalTag = cms.ESPrefer('PoolDBESSource','GlobalTag')
+
 process.p = cms.Path(process.hcalDigis*process.Analyzer)
 
 process.MessageLogger = cms.Service("MessageLogger",

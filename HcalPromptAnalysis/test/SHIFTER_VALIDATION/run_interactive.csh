@@ -1,6 +1,6 @@
 #!/bin/csh
 
-#./mkcfg_new.csh ${1}
+./mkcfg_new.csh ${1}
 
 ls PYTHON_${1}/*py
 

@@ -55,8 +55,8 @@ int main(int argc, char *argv[])
     TFile *hfile= new TFile( fname, "READ");
     TFile *hreffile= new TFile(refname, "READ");
      //CUTS:    [test][subdetector]                                  ADC amplitude  Am      Width  for Wm             Ratio cut for Rm             TS mean for TNm           TS max  for TXm
-    double MIN_M[7][5]={{0., 0.,0.,0.,0.}, {0., 0.,0.,0.,0.},           {0, 0.,0.,0.,0.}, {0, 2.0, 1.8, 2.2, 0.2}, {0, 0.10, 0.10,0.10, 0.10},  {0, 2.2, 2.2, 2.2, 0.5}, {0, -0.5, -0.5, -0.5, -0.5}};
-    double MAX_M[7][5]={{0., 0.,0.,0.,0.}, {0., 0.,0.,0.,0.},   {0, 2000,1500,9000,1000}, {0, 4.5, 4.5, 3.8, 3.8}, {0, 0.85, 0.85, 0.85, 0.98}, {0, 6.5, 6.5, 6.5, 6.5}, {0, 6.5, 6.5, 6.5, 6.5}};                    
+    double MIN_M[7][5]={{0., 0.,0.,0.,0.}, {0., 0.,0.,0.,0.},           {0, 0.,0.,0.,0.}, {0, 0.8, 0.6, 0.2, 0.1}, {0, 0.10, 0.10,0.10, 0.10},  {0, 0.5, 0.5, 0.3, 0.5}, {0, -0.5, -0.5, -0.5, -0.5}};
+    double MAX_M[7][5]={{0., 0.,0.,0.,0.}, {0., 0.,0.,0.,0.},   {0, 2000,1500,9000,1000}, {0, 4.0, 4.0, 3.8, 4.5}, {0, 0.95, 0.98, 0.96, 0.98}, {0, 8.0, 8.0, 8.5, 8.0}, {0, 9.0, 9.0, 6.5, 8.1}};                    
     double MIN_C[7][5]={{0., 0.,0.,0.,0.}, {0., 0.,0.,0.,0.},    {0, 120.,120.,120.,60.}, {0, 1.0, 1.0, 0.50, 0.2},{0, 0.6, 0.64,0.25, 0.25},   {0, 1.0, 1.0, 1.0, 1.0}, {0, 0.5, 0.5, 0.5, 0.5}};
     double MAX_C[7][5]={{0., 0.,0.,0.,0.}, {0., 0.,0.,0.,0.},   {0, 1E20,1E20,1E20,1E20}, {0, 2.3, 2.3, 3.0, 2.3}, {0, 1., 1., 1., 1.00},       {0, 5.5, 5.5, 3.5, 5.2}, {0, 8.5, 8.5, 8.5, 9.5}};                    
     double porog[5] = {0., 2., 2., 5., 1.}; // Cut for GS test in pro cents
@@ -2284,26 +2284,22 @@ int main(int argc, char *argv[])
            if (Sub[2][i]==1) {
 	      ce = db.find("subdet", "HB").find("Eta", Eta[2][i]).find("Phi", Phi[2][i]).find("Depth", Depth[2][i]);
 	      if (ce.size()==0) {cout<<"Error: No such HB, Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl; continue;}
-	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HB, Eta="<< 
-                                                       Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;continue;}
+	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HB, Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;}
 	      }
 	   if (Sub[2][i]==2) {
 	      ce = db.find("subdet", "HE").find("Eta", Eta[2][i]).find("Phi", Phi[2][i]).find("Depth", Depth[2][i]);
 	      if (ce.size()==0) {cout<<"Error: No such HE, Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;continue;}
-	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HE, Eta="
-                                << Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;continue;}	   
+	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HE, Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;}	   
 	      }
 	   if (Sub[2][i]==3) {
 	      ce = db.find("subdet", "HO").find("Eta", Eta[2][i]).find("Phi", Phi[2][i]).find("Depth", Depth[2][i]);
 	      if (ce.size()==0) {cout<<"Error: No such HO, Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;continue;}
-	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HO, Eta="<< Eta[2][i] 
-                                  <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;continue;}	   
+	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HO, Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;}	   
 	      }	   
 	   if (Sub[2][i]==4) {
 	      ce = db.find("subdet", "HF").find("Eta", Eta[2][i]).find("Phi", Phi[2][i]).find("Depth", Depth[2][i]);
 	      if (ce.size()==0) {cout<<"Error: No such HF, Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;continue;}
-	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HF, Eta="<< Eta[2][i] 
-                                         <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;continue;}	   
+	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HF, Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;}	   
 	      }	
 	   htmlFile << "<tr>"<< std::endl;
            htmlFile << "<td class=\"s4\" align=\"center\">" << ind+1 <<"</td>"<< std::endl;
@@ -2516,22 +2512,22 @@ int main(int argc, char *argv[])
 	if ((ce.size()>=1)&&(Sub[3][i]==sub)) {
            if (Sub[3][i]==1) {
 	      ce = db.find("subdet", "HB").find("Eta", Eta[3][i]).find("Phi", Phi[3][i]).find("Depth", Depth[3][i]);
-	      if (ce.size()==0) {cout<<"Error: No such HB, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;}
+	      if (ce.size()==0) {cout<<"Error: No such HB, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;continue;}
 	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HB, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;}
 	      }
 	   if (Sub[3][i]==2) {
 	      ce = db.find("subdet", "HE").find("Eta", Eta[3][i]).find("Phi", Phi[3][i]).find("Depth", Depth[3][i]);
-	      if (ce.size()==0) {cout<<"Error: No such HE, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;}
+	      if (ce.size()==0) {cout<<"Error: No such HE, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;continue;}
 	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HE, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;}	   
 	      }
 	   if (Sub[3][i]==3) {
 	      ce = db.find("subdet", "HO").find("Eta", Eta[3][i]).find("Phi", Phi[3][i]).find("Depth", Depth[3][i]);
-	      if (ce.size()==0) {cout<<"Error: No such HO, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;}
+	      if (ce.size()==0) {cout<<"Error: No such HO, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;continue;}
 	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HO, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;}	   
 	      }	   
 	   if (Sub[3][i]==4) {
 	      ce = db.find("subdet", "HF").find("Eta", Eta[3][i]).find("Phi", Phi[3][i]).find("Depth", Depth[3][i]);
-	      if (ce.size()==0) {cout<<"Error: No such HF, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;}
+	      if (ce.size()==0) {cout<<"Error: No such HF, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;continue;}
 	      else if (ce.size()>1) {cout<<"Warning: More than one line correspond to such HF, Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;}	   
 	      }	
            htmlFile << "<td class=\"s4\" align=\"center\">" << ind+1 <<"</td>"<< std::endl;
@@ -2710,7 +2706,7 @@ int main(int argc, char *argv[])
         }
         const CellDB db;
         const CellDB ce = db.find("Eta", Eta[2][i]).find("Phi", Phi[2][i]).find("Depth", Depth[2][i]);
-             if (ce.size()==0) {cout<<"Error: No such Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;}
+             if (ce.size()==0) {cout<<"Error: No such Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;continue;}
 //	else if (ce.size()>1) { cout<<"Warning: More than one line correspond to such Eta="<< Eta[2][i] <<", Phi="<< Phi[2][i] <<", Depth="<< Depth[2][i] <<" in database"<<endl;}
 	
 	if (ce.size()>=1) {
@@ -2777,7 +2773,7 @@ int main(int argc, char *argv[])
         }
         const CellDB db;
         const CellDB ce = db.find("Eta", Eta[1][i]).find("Phi", Phi[1][i]).find("Depth", Depth[1][i]);
-	    if (ce.size()==0) {cout<<"Error: No such Eta="<< Eta[1][i] <<", Phi="<< Phi[1][i] <<", Depth="<< Depth[1][i] <<" in database"<<endl;}
+	    if (ce.size()==0) {cout<<"Error: No such Eta="<< Eta[1][i] <<", Phi="<< Phi[1][i] <<", Depth="<< Depth[1][i] <<" in database"<<endl;continue;}
 //	else if (ce.size()>1) { cout<<"Warning: More than one line correspond to such Eta="<< Eta[1][i] <<", Phi="<< Phi[1][i] <<", Depth="<< Depth[1][i] <<" in database"<<endl;}
 	
 	if (ce.size()>=1) {
@@ -2847,7 +2843,7 @@ int main(int argc, char *argv[])
         }
         const CellDB db;
         const CellDB ce = db.find("Eta", Eta[3][i]).find("Phi", Phi[3][i]).find("Depth", Depth[3][i]);
-	    if (ce.size()==0) {cout<<"Error: No such Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;}
+	    if (ce.size()==0) {cout<<"Error: No such Eta="<< Eta[3][i] <<", Phi="<< Phi[3][i] <<", Depth="<< Depth[3][i] <<" in database"<<endl;continue;}
 //	else if (ce.size()>1) { cout<<"Warning: More than one line correspond to such Eta="<< Eta[1][i] <<", Phi="<< Phi[1][i] <<", Depth="<< Depth[1][i] <<" in database"<<endl;}
 	
 	if (ce.size()>=1) {

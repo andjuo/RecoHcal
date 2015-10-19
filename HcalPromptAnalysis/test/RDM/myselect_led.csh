@@ -4,7 +4,7 @@
 ### All files have the particular time
 ###
 #set DAT=`date '+%Y-%m-%d_%H_%M_%S'`
-set WD='/afs/cern.ch/cms/CAF/CMSALCA/ALCA_HCALCALIB/HCALMONITORING/RDMScript/CMSSW_7_4_5_STABLE/src/RecoHcal/HcalPromptAnalysis/test/RDM'
+set WD='/afs/cern.ch/cms/CAF/CMSALCA/ALCA_HCALCALIB/HCALMONITORING/RDMScript/CMSSW_5_3_21/src/RecoHcal/HcalPromptAnalysis/test/RDM'
 set REF=135077
 set LAST=`cat ${WD}/LED_LIST/LASTRUN` 
 if( ${LAST} == "" ) then

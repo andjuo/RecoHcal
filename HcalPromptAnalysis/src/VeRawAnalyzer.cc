@@ -11,8 +11,8 @@ Implementation:
 <Notes on implementation>
 */
 //
-// $Id: VeRawAnalyzer.cc,v 1.10 2013/04/28 19:01:16 dtlisov Exp $
-//
+// $Id: VeRawAnalyzer.cc,v 1.10 2013/04/28 19:01:16 dtlisov Exp $ 
+// h_mapDepth1ADCAmpl12_HF
 
 // system include files
 #include <fstream> 
@@ -21,13 +21,14 @@ Implementation:
 #include <iosfwd>
 #include <bitset>
 #include <memory>
+
 //#include "TFile.h"
 //#include "TH1F.h"
 //#include "TH2F.h"
 //#include "TTree.h"
 
 using namespace std;
-// user include files
+// user include files 
 
 #include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -187,6 +188,8 @@ edm::EDGetTokenT<HFDigiCollection> tok_hf_;
   int bcnrejectedlow_;
   int bcnrejectedhigh_;
 
+  int flagestimatornormalization_;
+  int flagcpuoptimization_;
 //  int nbadchannels1_;
 //  int nbadchannels2_;
 //  int nbadchannels3_;
@@ -529,6 +532,7 @@ edm::EDGetTokenT<HFDigiCollection> tok_hf_;
   TH2F* h_mapDepth2_HF;
   /////////////////////////////////////////////
   TH1F* h_ADCAmpl_HO;
+  TH1F* h_ADCAmpl_HO_copy;
   TH2F* h_mapDepth4ADCAmpl_HO;
   TH2F* h_mapDepth4ADCAmpl225_HO;
 
@@ -621,6 +625,24 @@ TH1F*     h_bcnbadrate0_depth4_HO;
 TH1F*     h_bcnbadrate0_depth1_HF;
 TH1F*     h_bcnbadrate0_depth2_HF;
 
+
+TH1F*         h_Amplitude_forCapIdErrors_HB1;
+TH1F*         h_Amplitude_forCapIdErrors_HB2;
+TH1F*         h_Amplitude_forCapIdErrors_HE1;
+TH1F*         h_Amplitude_forCapIdErrors_HE2;
+TH1F*         h_Amplitude_forCapIdErrors_HE3;
+TH1F*         h_Amplitude_forCapIdErrors_HF1;
+TH1F*         h_Amplitude_forCapIdErrors_HF2;
+TH1F*         h_Amplitude_forCapIdErrors_HO4;
+
+TH1F*         h_Amplitude_notCapIdErrors_HB1;
+TH1F*         h_Amplitude_notCapIdErrors_HB2;
+TH1F*         h_Amplitude_notCapIdErrors_HE1;
+TH1F*         h_Amplitude_notCapIdErrors_HE2;
+TH1F*         h_Amplitude_notCapIdErrors_HE3;
+TH1F*         h_Amplitude_notCapIdErrors_HF1;
+TH1F*         h_Amplitude_notCapIdErrors_HF2;
+TH1F*         h_Amplitude_notCapIdErrors_HO4;
 
   /////////////////////////////////////////////
   TH1F* h_ADCAmpl_HE;
@@ -874,6 +896,17 @@ TH1F*     h_bcnbadrate0_depth2_HF;
   TH1F*    h_sumCutADCAmplperLS6         ;
   TH2F*    h_2D0sumADCAmplLS6         ;
   TH1F*    h_sum0ADCAmplperLS6         ;
+
+  TH1F*    h_sumADCAmplperLS6_P1         ;
+  TH1F*    h_sum0ADCAmplperLS6_P1         ;
+  TH1F*    h_sumADCAmplperLS6_P2         ;
+  TH1F*    h_sum0ADCAmplperLS6_P2         ;
+  TH1F*    h_sumADCAmplperLS6_M1         ;
+  TH1F*    h_sum0ADCAmplperLS6_M1         ;
+  TH1F*    h_sumADCAmplperLS6_M2         ;
+  TH1F*    h_sum0ADCAmplperLS6_M2         ;
+
+
   
   TH1F*    h_sumADCAmplLS7         ;
   TH2F*    h_2DsumADCAmplLS7         ;
@@ -1108,6 +1141,11 @@ TH1F*     h_bcnbadrate0_depth2_HF;
   TH1F*    h_sumCutAmplperLS6         ;
   TH2F*    h_2D0sumAmplLS6         ;
   TH1F*    h_sum0AmplperLS6         ;
+
+  TH1F*        h_RatioOccupancy_HFP         ;
+  TH1F*        h_RatioOccupancy_HFM         ;
+
+
   
   TH1F*    h_sumAmplLS7         ;
   TH2F*    h_2DsumAmplLS7         ;
@@ -1490,6 +1528,21 @@ TH1F*     h_bcnbadrate0_depth2_HF;
   TH2F* h_mapGetRMSOverNormalizedSignal0_HF;
   TH2F* h_mapGetRMSOverNormalizedSignal_HO;
   TH2F* h_mapGetRMSOverNormalizedSignal0_HO;
+
+
+
+  TH2F* h_2D0sumErrorBLS6;
+  TH2F* h_2DsumErrorBLS6;
+  TH1F*  h_sumErrorBLS6;
+  TH1F* h_sumErrorBperLS6 ;
+  TH1F* h_sum0ErrorBperLS6;
+  TH2F* h_2D0sumErrorBLS7;
+  TH2F* h_2DsumErrorBLS7;
+  TH1F*  h_sumErrorBLS7;
+  TH1F* h_sumErrorBperLS7 ;
+  TH1F* h_sum0ErrorBperLS7;
+  
+
   /////////////////////////////////////////////
   // for ROOT
   // Readouts
@@ -1531,6 +1584,8 @@ TH1F*     h_bcnbadrate0_depth2_HF;
   double sumEstimator3[4][4][82][72];
   double sumEstimator4[4][4][82][72];
   double sumEstimator5[4][4][82][72];
+  double sumEstimator6[4][4][82][72];
+  double sum0Estimator[4][4][82][72];
 
   double amplitudechannel[4][4][82][72];
 
@@ -1626,10 +1681,14 @@ VeRawAnalyzer::VeRawAnalyzer(const edm::ParameterSet& iConfig)
   ratioHOMin_      = iConfig.getParameter<double>("ratioHOMin");//
   ratioHOMax_      = iConfig.getParameter<double>("ratioHOMax");//
   //
-  flagtoaskrunsorls_ = iConfig.getParameter<int>("flagtoaskrunsorls");//
   flagtodefinebadchannel_ = iConfig.getParameter<int>("flagtodefinebadchannel");//
   howmanybinsonplots_ = iConfig.getParameter<int>("howmanybinsonplots");//
   splashesUpperLimit_ = iConfig.getParameter<int>("splashesUpperLimit");//
+
+  flagtoaskrunsorls_ = iConfig.getParameter<int>("flagtoaskrunsorls");//
+  flagestimatornormalization_ = iConfig.getParameter<int>("flagestimatornormalization");//
+  flagcpuoptimization_ = iConfig.getParameter<int>("flagcpuoptimization");//
+
 //  nbadchannels1_      = iConfig.getParameter<int>("nbadchannels1");//
 //  nbadchannels2_      = iConfig.getParameter<int>("nbadchannels2");//
 //  nbadchannels3_      = iConfig.getParameter<int>("nbadchannels3");//
@@ -1823,6 +1882,8 @@ VeRawAnalyzer::VeRawAnalyzer(const edm::ParameterSet& iConfig)
   std::cout<<" ratioHOMin_ = " <<ratioHOMin_ << std::endl;   
   std::cout<<" ratioHOMax_ = " <<ratioHOMax_ << std::endl;   
   std::cout<<" flagtoaskrunsorls_ = " <<flagtoaskrunsorls_ << std::endl;
+  std::cout<<" flagestimatornormalization_ = " <<flagestimatornormalization_ << std::endl;
+  std::cout<<" flagcpuoptimization_ = " <<flagcpuoptimization_ << std::endl;
   std::cout<<" flagtodefinebadchannel_ = " <<flagtodefinebadchannel_ << std::endl;
   std::cout<<" howmanybinsonplots_ = " <<howmanybinsonplots_ << std::endl;
   std::cout<<" splashesUpperLimit_ = " <<splashesUpperLimit_ << std::endl;
@@ -1948,6 +2009,8 @@ VeRawAnalyzer::VeRawAnalyzer(const edm::ParameterSet& iConfig)
 	  sumEstimator3[k0][k1][k2][k3] = 0.;
 	  sumEstimator4[k0][k1][k2][k3] = 0.;
 	  sumEstimator5[k0][k1][k2][k3] = 0.;
+	  sumEstimator6[k0][k1][k2][k3] = 0.;
+	  sum0Estimator[k0][k1][k2][k3] = 0.;
 	}//for  
       }//for  
     }//for  
@@ -1985,11 +2048,59 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 //     (lumi == 89 && bcn == 757 && Nevent == 163)  
 //     ) std::cout  <<  " Run =  "  << Run  <<  " bcn =  "  << bcn  <<  " LS =  "  << lumi  <<  " event =  "  << Nevent  <<  endl;
    if(verbosity > 0 ) std::cout  <<  " Run =  "  << Run  <<  " bcn =  "  << bcn  <<  " LS =  "  << lumi  <<  " event =  "  << Nevent  <<  endl;
+
   int outabortgap = 1;
   if(bcn >= bcnrejectedlow_ && bcn <= bcnrejectedhigh_ ) outabortgap = 0; //  if(bcn>=3446 && bcn<=3564) 
+
+
+
   if((flagabortgaprejected_ == 1 && outabortgap == 1) || (flagabortgaprejected_ == 0 && outabortgap == 0) || flagabortgaprejected_ == 2 ) {
-  //////
-  // // // // // // to get counters:
+    //if( ((flagabortgaprejected_ == 1 && outabortgap == 1) || (flagabortgaprejected_ == 0 && outabortgap == 0) || flagabortgaprejected_ == 2) && lumi ==118 ) {
+//    if( ((flagabortgaprejected_ == 1 && outabortgap == 1) || (flagabortgaprejected_ == 0 && outabortgap == 0) || flagabortgaprejected_ == 2) && lumi ==112 ) {
+//    if( ((flagabortgaprejected_ == 1 && outabortgap == 1) || (flagabortgaprejected_ == 0 && outabortgap == 0) || flagabortgaprejected_ == 2) && lumi >=112 && lumi<=118) {
+
+
+   //////
+    // // // // // // to get counters:
+    
+    /*
+	// Get The Info you need
+    // int bcn = iEvent.bunchCrossing();
+	// int sourceId = amc13h->sourceId();
+	int bx = iEvent.bunchId();
+	unsigned int orn = amc13h->orbitNumber();
+	int l1a = amc13h->l1aNumber();
+	int namc = amc13h->NAMC();
+	// int amc13version = amc13h->AMC13FormatVersion();for (int iamc=0; iamc<namc; iamc++)
+	{
+	// Get the info for that AMC13
+	int slot = amc13h->AMCSlot(iamc);
+	int crate = amc13h->AMCId(iamc)&0xFF;
+	// int amcsize = amc13h->AMCSize(iamc)/1000;
+	
+	//	_mes["uTCA_CratesVSslots"].Fill(slot, crate);
+	HcalUHTRData uhtr(amc13h->AMCPayload(iamc), amc13h->AMCSize(iamc));
+	for (HcalUHTRData::const_iterator iuhtr=uhtr.begin(); iuhtr!=uhtr.end();
+	++iuhtr)
+	{
+	if (!iuhtr.isHeader())
+	continue;
+	
+	// Flavor determines what kind of data this uhtr contains
+	// tp, regular digi, upgrade qie digis, etc..
+	if (iuhtr.flavor()==hcaldqm::constants::UTCA_DATAFLAVOR)
+	{
+	// get the Info you need
+	int fiber = (iuhtr.channelid()>>2)&0x1F;
+	int fibchannel = iuhtr.channelid()&0x3;
+	uint32_t l1a_uhtr = uhtr.l1ANumber();
+	uint32_t bx_uhtr = uhtr.bunchNumber();
+	uint32_t orn_uhtr = uhtr.orbitNumber();
+	int32_t dbcn = bx_uhtr - bx;
+	int32_t dorn = orn_uhtr - orn;
+	int32_t devn = l1a_uhtr-l1a;
+	}}}
+*/
 
   //////
   // to get runcounter:
@@ -2018,9 +2129,10 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   ++eventcounter;
 
   // to get new LS:
+
   if(ls0 != lumi) {
     if(ls0 != -1) {
-      h_nevents_per_eachLS->Fill( float(lscounter) ,float(nevcounter) );
+      h_nevents_per_eachLS->Fill( float(lscounter) ,float(nevcounter) );//
       nevcounter0=nevcounter;
       if(verbosity > 0 ) std::cout  <<  " nevcounter0 =  "  << nevcounter0  <<  endl;
     }
@@ -2030,8 +2142,9 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     /////////////////////////////////////////////////////////////////
     //    lscounterM1 = lumi ;
     if(usecontinuousnumbering_) { lscounterM1 = lscounter - 1; }
-    else {lscounterM1 = lumi; }
-    if(ls0 != -1) h_nevents_per_eachRealLS->Fill( float(lscounterM1) ,float(nevcounter) );
+    else {lscounterM1 = ls0; }
+    //    else {lscounterM1 = lumi; }
+    if(ls0 != -1) h_nevents_per_eachRealLS->Fill( float(lscounterM1) ,float(nevcounter) );//
 
     /////////////////////////////////////////////////////////////////
     h_lsnumber_per_eachLS->Fill( float(lscounter) ,float(lumi) );
@@ -2060,6 +2173,9 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   if (verbosity == -79 && lscounter == 76) std::cout << "   nevcounter0=  " << nevcounter0 <<" lscounter= " << lscounter <<" nevcounter= " << nevcounter <<" sumEstimator4= " << (double)sumEstimator4[3][1][40][50] << std::endl;
   
   if (verbosity == -84 ) std::cout << "==================>>>    nevcounter0 = " <<nevcounter0 << "in LS nevcounter = " <<nevcounter << "in run: eventcounter = " <<eventcounter << "  lscounter = " <<lscounter << "  lscounterrun = " <<lscounterrun << "  runcounter = " <<runcounter<< "  lscounterM1 = " <<lscounterM1 << std::endl;
+  if (verbosity == -5555 ) std::cout << "==================>>>    nevcounter0 = " <<nevcounter0 << "in LS nevcounter = " <<nevcounter << "in run: eventcounter = " <<eventcounter << "  lscounter = " <<lscounter << "  lscounterrun = " <<lscounterrun << "  runcounter = " <<runcounter<< "  lscounterM1 = " <<lscounterM1 << std::endl;
+  if (verbosity == -7777 ) std::cout << "==================>>>    nevcounter0 = " <<nevcounter0 << "in LS nevcounter = " <<nevcounter << "in run: eventcounter = " <<eventcounter << "  lscounter = " <<lscounter << "  lscounterrun = " <<lscounterrun << "  runcounter = " <<runcounter<< "  lscounterM1 = " <<lscounterM1 << std::endl;
+  if (verbosity == -7778 && nevcounter0 != 0) std::cout << "==================>>>    nevcounter0 = " <<nevcounter0 << "in run: eventcounter = " <<eventcounter << "  lscounter = " <<lscounter << "  lscounterM1 = " <<lscounterM1 << "  lumi = " <<lumi << std::endl;
   
   
   if(nevcounter0 != 0 || nevcounter > 99999 ) {  
@@ -2068,574 +2184,797 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     ///////  int sub= cell.subdet();  1-HB, 2-HE, 3-HO, 4-HF
     ////////////            k0(sub): =0 HB; =1 HE; =2 HO; =3 HF;
     ////////////         k1(depth-1): = 0 - 3 or depth: = 1 - 4;
+    int pnnbins=0;
+    int pcountall=0;
+    int pcountmin=0;
+    int pnnmin=999999999;
+    int mcountall=0;
+    int mcountmin=0;
+    int mnnbins=0;
+    int mnnmin=999999999;
+
     for(int k0 = 0; k0<4; k0++) {
       for(int k1 = 0; k1<4; k1++) {
-	for(int k2 = 0; k2<82; k2++) {
-	  for(int k3 = 0; k3<72; k3++) {
-	    //	    if(badchannels[k0][k1][k2][k3] !=0) ++nbadchannels;
+	for(int k3 = 0; k3<72; k3++) {
+	  for(int k2 = 0; k2<82; k2++) {
 	    int ieta = k2-41;
 	    
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator0
 	    if (verbosity == -81 ) std::cout << "sumEstimator0 = " <<sumEstimator0[k0][k1][k2][k3]<< std::endl;
 	    if(sumEstimator0[k0][k1][k2][k3] != 0. ) {
+
 	      // fill histoes:
-	      double bbbc = sumEstimator0[k0][k1][k2][k3]/nevcounter0;
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator0[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator0[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator0[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
 	      
 	      // HB:
 	      if(k0==0) {
 		// HBdepth1
 		if(k1+1  ==1) {
-		  h_sumPedestalLS1->Fill(bbbc);
+		  h_sumPedestalLS1->Fill(bbbc/bbb1);
 		  h_2DsumPedestalLS1->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumPedestalLS1->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumPedestalLS1->Fill(double(ieta), double(k3), bbb1);
 		  h_sumPedestalperLS1->Fill( float(lscounterM1) ,bbbc);
-		  h_sum0PedestalperLS1->Fill( float(lscounterM1) ,1.);
+		  h_sum0PedestalperLS1->Fill( float(lscounterM1) ,bbb1);
 		}
 		if(k1+1  ==2) {
-		  h_sumPedestalLS2->Fill(bbbc);
+		  h_sumPedestalLS2->Fill(bbbc/bbb1);
 		  h_2DsumPedestalLS2->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumPedestalLS2->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumPedestalLS2->Fill(double(ieta), double(k3), bbb1);
 		  h_sumPedestalperLS2->Fill( float(lscounterM1) ,bbbc);
-		  h_sum0PedestalperLS2->Fill( float(lscounterM1) ,1.);
+		  h_sum0PedestalperLS2->Fill( float(lscounterM1) ,bbb1);
 		}
 	      }
-	      
 	      // HE:
 	      if(k0==1) {
 		// HBdepth1
 		if(k1+1  ==1) {
-		  h_sumPedestalLS3->Fill(bbbc);
+		  h_sumPedestalLS3->Fill(bbbc/bbb1);
 		  h_2DsumPedestalLS3->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumPedestalLS3->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumPedestalLS3->Fill(double(ieta), double(k3), bbb1);
 		  h_sumPedestalperLS3->Fill( float(lscounterM1) ,bbbc);
-		  h_sum0PedestalperLS3->Fill( float(lscounterM1) ,1.);
+		  h_sum0PedestalperLS3->Fill( float(lscounterM1) ,bbb1);
 		}
 		if(k1+1  ==2) {
-		  h_sumPedestalLS4->Fill(bbbc);
+		  h_sumPedestalLS4->Fill(bbbc/bbb1);
 		  h_2DsumPedestalLS4->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumPedestalLS4->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumPedestalLS4->Fill(double(ieta), double(k3), bbb1);
 		  h_sumPedestalperLS4->Fill( float(lscounterM1) ,bbbc);
-		  h_sum0PedestalperLS4->Fill( float(lscounterM1) ,1.);
+		  h_sum0PedestalperLS4->Fill( float(lscounterM1) ,bbb1);
 		}
 		if(k1+1  ==3) {
-		  h_sumPedestalLS5->Fill(bbbc);
+		  h_sumPedestalLS5->Fill(bbbc/bbb1);
 		  h_2DsumPedestalLS5->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumPedestalLS5->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumPedestalLS5->Fill(double(ieta), double(k3), bbb1);
 		  h_sumPedestalperLS5->Fill( float(lscounterM1) ,bbbc);
-		  h_sum0PedestalperLS5->Fill( float(lscounterM1) ,1.);
+		  h_sum0PedestalperLS5->Fill( float(lscounterM1) ,bbb1);
 		}
 	      }
-		
 	      // HF:
 	      if(k0==3) {
 		// HBdepth1
 		if(k1+1  ==1) {
-		  h_sumPedestalLS6->Fill(bbbc);
+		  h_sumPedestalLS6->Fill(bbbc/bbb1);
 		  h_2DsumPedestalLS6->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumPedestalLS6->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumPedestalLS6->Fill(double(ieta), double(k3), bbb1);
 		  h_sumPedestalperLS6->Fill( float(lscounterM1) ,bbbc);
-		  h_sum0PedestalperLS6->Fill( float(lscounterM1) ,1.);
+		  h_sum0PedestalperLS6->Fill( float(lscounterM1) ,bbb1);
 		}
 		if(k1+1  ==2) {
-		  h_sumPedestalLS7->Fill(bbbc);
+		  h_sumPedestalLS7->Fill(bbbc/bbb1);
 		  h_2DsumPedestalLS7->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumPedestalLS7->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumPedestalLS7->Fill(double(ieta), double(k3), bbb1);
 		  h_sumPedestalperLS7->Fill( float(lscounterM1) ,bbbc);
-		  h_sum0PedestalperLS7->Fill( float(lscounterM1) ,1.);
+		  h_sum0PedestalperLS7->Fill( float(lscounterM1) ,bbb1);
 		}
 	      }
-
 	      // HO:
 	      if(k0==2) {
 		// HBdepth1
 		if(k1+1  ==4) {
-		  h_sumPedestalLS8->Fill(bbbc);
+		  h_sumPedestalLS8->Fill(bbbc/bbb1);
 		  h_2DsumPedestalLS8->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumPedestalLS8->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumPedestalLS8->Fill(double(ieta), double(k3), bbb1);
 		  h_sumPedestalperLS8->Fill( float(lscounterM1) ,bbbc);
-		  h_sum0PedestalperLS8->Fill( float(lscounterM1) ,1.);
+		  h_sum0PedestalperLS8->Fill( float(lscounterM1) ,bbb1);
 		}
 	      }
-
-
 	    }//if(sumEstimator0[k0][k1][k2][k3] != 0.
-
-
-
-
-    // does not matter which sumEstimator (1,2,3,4,5) to use: they are strongly correlated for zero
+	    
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator1
+	    if (verbosity == -81 ) std::cout << "sumEstimator1 = " <<sumEstimator1[k0][k1][k2][k3]<< std::endl;
 	    if(sumEstimator1[k0][k1][k2][k3] != 0. ) {
 	      
-	      
 	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator1[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator1[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
 	      // HB:
 	      if(k0==0) {
 		// HBdepth1
 		if(k1+1  ==1) {
-		  double bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
-		  h_sumADCAmplLS1copy1->Fill(bbbc);
-		  h_sumADCAmplLS1copy2->Fill(bbbc);
-		  h_sumADCAmplLS1copy3->Fill(bbbc);
-		  h_sumADCAmplLS1copy4->Fill(bbbc);
-		  h_sumADCAmplLS1copy5->Fill(bbbc);
-		  h_sumADCAmplLS1->Fill(bbbc);
+	  	  if (verbosity == -5555 && k2==55&&k3==17) std::cout << "***sumEstimator1= "  << sumEstimator1[k0][k1][k2][k3] << "sum0Estimator= "  << sum0Estimator[k0][k1][k2][k3] <<" nevcounter0= " << nevcounter0 <<" bbbc= " << bbbc << std::endl;
+		  
+		  h_sumADCAmplLS1copy1->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1copy2->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1copy3->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1copy4->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1copy5->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1->Fill(bbbc/bbb1);
 		  if(bbbc > lsdep_estimator1_HBdepth1_ ) h_2DsumADCAmplLS1->Fill(double(ieta), double(k3), bbbc);
 		  if(bbbc > 2.*lsdep_estimator1_HBdepth1_ ) h_2DsumADCAmplLS1_LSselected->Fill(double(ieta), double(k3), bbbc);
 //		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_2DsumADCAmplLS1_LSselected->Fill(double(ieta), double(k3), bbbc);
 		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS1_LSselected->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumADCAmplLS1->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumADCAmplLS1->Fill(double(ieta), double(k3), bbb1);
 		  h_sumADCAmplperLS1->Fill( float(lscounterM1) ,bbbc);
 		  if(bbbc > lsdep_estimator1_HBdepth1_ ) h_sumCutADCAmplperLS1->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0ADCAmplperLS1->Fill( float(lscounterM1) ,1.);
+		  h_sum0ADCAmplperLS1->Fill( float(lscounterM1) ,bbb1);
+
 		}
-		// HBdepth2
 		if(k1+1  ==2) {
-		  double bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
-		  h_sumADCAmplLS2->Fill(bbbc);
+		  h_sumADCAmplLS2->Fill(bbbc/bbb1);
 		  if(bbbc > lsdep_estimator1_HBdepth2_  ) h_2DsumADCAmplLS2->Fill(double(ieta), double(k3), bbbc);
 		  if(bbbc > 2.*lsdep_estimator1_HBdepth2_  ) h_2DsumADCAmplLS2_LSselected->Fill(double(ieta), double(k3), bbbc);
 //		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_2DsumADCAmplLS2_LSselected->Fill(double(ieta), double(k3), bbbc);
 		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS2_LSselected->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumADCAmplLS2->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumADCAmplLS2->Fill(double(ieta), double(k3), bbb1);
 		  h_sumADCAmplperLS2->Fill( float(lscounterM1) ,bbbc);
 		  if(bbbc > lsdep_estimator1_HBdepth2_  ) h_sumCutADCAmplperLS2->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0ADCAmplperLS2->Fill( float(lscounterM1) ,1.);
+		  h_sum0ADCAmplperLS2->Fill( float(lscounterM1) ,bbb1);
+
 		}
-		// HBdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmeanALS1->Fill(bbbc);
-		  if(bbbc>lsdep_estimator2_HBdepth1_  )h_2DsumTSmeanALS1->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmeanALS1->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmeanAperLS1->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator2_HBdepth1_  ) h_sumCutTSmeanAperLS1->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmeanAperLS1->Fill( float(lscounterM1) ,1.);
-		  if(bbbc> 2.*lsdep_estimator2_HBdepth1_  ) h_sumTSmeanAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-//		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumTSmeanAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumTSmeanAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-		}
-		// HBdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmeanALS2->Fill(bbbc);
-		  if(bbbc<lsdep_estimator2_HBdepth2_  )h_2DsumTSmeanALS2->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmeanALS2->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmeanAperLS2->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator2_HBdepth2_  ) h_sumCutTSmeanAperLS2->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmeanAperLS2->Fill( float(lscounterM1) ,1.);
-		}
-		// HBdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmaxALS1->Fill(bbbc);
-		  if(bbbc>lsdep_estimator3_HBdepth1_  )h_2DsumTSmaxALS1->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmaxALS1->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmaxAperLS1->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator3_HBdepth1_  ) h_sumCutTSmaxAperLS1->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmaxAperLS1->Fill( float(lscounterM1) ,1.);
-		  if(bbbc> 2.*lsdep_estimator3_HBdepth1_  ) h_sumTSmaxAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-//		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumTSmaxAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumTSmaxAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-		}
-		// HBdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmaxALS2->Fill(bbbc);
-		  if(bbbc<lsdep_estimator3_HBdepth2_  )h_2DsumTSmaxALS2->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmaxALS2->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmaxAperLS2->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator3_HBdepth2_  ) h_sumCutTSmaxAperLS2->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmaxAperLS2->Fill( float(lscounterM1) ,1.);
-		}
-		// HBdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplitudeLS1->Fill(bbbc);
-		  if(bbbc>lsdep_estimator4_HBdepth1_  )h_2DsumAmplitudeLS1->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplitudeLS1->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplitudeperLS1->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator4_HBdepth1_  ) h_sumCutAmplitudeperLS1->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplitudeperLS1->Fill( float(lscounterM1) ,1.);
-		  if(bbbc> 2.*lsdep_estimator4_HBdepth1_  ) h_sumAmplitudeperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-		  //		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumAmplitudeperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-				  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumAmplitudeperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-		}
-		// HBdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplitudeLS2->Fill(bbbc);
-		  if(bbbc>lsdep_estimator4_HBdepth2_  )h_2DsumAmplitudeLS2->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplitudeLS2->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplitudeperLS2->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator4_HBdepth2_  ) h_sumCutAmplitudeperLS2->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplitudeperLS2->Fill( float(lscounterM1) ,1.);
-		}
-		// HBdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplLS1->Fill(bbbc);
-		  if(bbbc>lsdep_estimator5_HBdepth1_  )h_2DsumAmplLS1->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplLS1->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplperLS1->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator5_HBdepth1_  ) h_sumCutAmplperLS1->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplperLS1->Fill( float(lscounterM1) ,1.);
-		  if(bbbc> 2.*lsdep_estimator5_HBdepth1_  ) h_sumAmplperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-		  //		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumAmplperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumAmplperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
-		}
-		// HBdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplLS2->Fill(bbbc);
-		  if(bbbc<lsdep_estimator5_HBdepth2_  )h_2DsumAmplLS2->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplLS2->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplperLS2->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator5_HBdepth2_  ) h_sumCutAmplperLS2->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplperLS2->Fill( float(lscounterM1) ,1.);
-		}
-		
-	      }//k0
-	      
-	      // HE:
-	      if( k0 == 1) {
-		// HEdepth1
-		if(k1+1  ==1) {
-		    double bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
-		    h_sumADCAmplLS3->Fill(bbbc);
-		    if(bbbc > lsdep_estimator1_HEdepth1_  ) h_2DsumADCAmplLS3->Fill(double(ieta), double(k3), bbbc);
-		    if(bbbc > 2.*lsdep_estimator1_HEdepth1_  ) h_2DsumADCAmplLS3_LSselected->Fill(double(ieta), double(k3), bbbc);
-//		    if( ( lscounterM1 == 146 || lscounterM1 == 515 ) ) h_2DsumADCAmplLS3_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS3_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    h_2D0sumADCAmplLS3->Fill(double(ieta), double(k3), 1.);
-		    h_sumADCAmplperLS3->Fill( float(lscounterM1) ,bbbc);
-		    if(bbbc > lsdep_estimator1_HEdepth1_  ) h_sumCutADCAmplperLS3->Fill( float(lscounterM1) ,bbbc); 
-		    h_sum0ADCAmplperLS3->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth2
-		if(k1+1  ==2) {
-		    double bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
-		    h_sumADCAmplLS4->Fill(bbbc);
-		    if(bbbc > lsdep_estimator1_HEdepth2_  ) h_2DsumADCAmplLS4->Fill(double(ieta), double(k3), bbbc);
-		    if(bbbc > 2.*lsdep_estimator1_HEdepth2_  ) h_2DsumADCAmplLS4_LSselected->Fill(double(ieta), double(k3), bbbc);
-//		    if( ( lscounterM1 == 146 || lscounterM1 == 515 ) ) h_2DsumADCAmplLS4_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS4_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    h_2D0sumADCAmplLS4->Fill(double(ieta), double(k3), 1.);
-		    h_sumADCAmplperLS4->Fill( float(lscounterM1) ,bbbc);
-		    if(bbbc > lsdep_estimator1_HEdepth2_  ) h_sumCutADCAmplperLS4->Fill( float(lscounterM1) ,bbbc); 
-		    h_sum0ADCAmplperLS4->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth3
-		if(k1+1  ==3) {
-		    double bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
-		    h_sumADCAmplLS5->Fill(bbbc);
-		    if(bbbc > lsdep_estimator1_HEdepth3_  ) h_2DsumADCAmplLS5->Fill(double(ieta), double(k3), bbbc);
-		    if(bbbc > 2.*lsdep_estimator1_HEdepth3_  ) h_2DsumADCAmplLS5_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    //		    if( ( lscounterM1 == 146 || lscounterM1 == 515 ) ) h_2DsumADCAmplLS5_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS5_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    h_2D0sumADCAmplLS5->Fill(double(ieta), double(k3), 1.);
-		    h_sumADCAmplperLS5->Fill( float(lscounterM1) ,bbbc);
-		    if(bbbc > lsdep_estimator1_HEdepth3_  ) h_sumCutADCAmplperLS5->Fill( float(lscounterM1) ,bbbc); 
-		    h_sum0ADCAmplperLS5->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmeanALS3->Fill(bbbc);
-		  if(bbbc<lsdep_estimator2_HEdepth1_  )h_2DsumTSmeanALS3->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmeanALS3->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmeanAperLS3->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator2_HEdepth1_  ) h_sumCutTSmeanAperLS3->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmeanAperLS3->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmeanALS4->Fill(bbbc);
-		  if(bbbc<lsdep_estimator2_HEdepth2_  )h_2DsumTSmeanALS4->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmeanALS4->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmeanAperLS4->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator2_HEdepth2_  ) h_sumCutTSmeanAperLS4->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmeanAperLS4->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth3
-		if(k1+1  ==3  ) {
-		  double bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmeanALS5->Fill(bbbc);
-		  if(bbbc<lsdep_estimator2_HEdepth3_  )h_2DsumTSmeanALS5->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmeanALS5->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmeanAperLS5->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator2_HEdepth3_  ) h_sumCutTSmeanAperLS5->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmeanAperLS5->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmaxALS3->Fill(bbbc);
-		  if(bbbc<lsdep_estimator3_HEdepth1_  )h_2DsumTSmaxALS3->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmaxALS3->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmaxAperLS3->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator3_HEdepth1_  ) h_sumCutTSmaxAperLS3->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmaxAperLS3->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmaxALS4->Fill(bbbc);
-		if(bbbc<lsdep_estimator3_HEdepth2_  )h_2DsumTSmaxALS4->Fill(double(ieta),double(k3),bbbc);
-		h_2D0sumTSmaxALS4->Fill(double(ieta), double(k3), 1.);
-		h_sumTSmaxAperLS4->Fill( float(lscounterM1) ,bbbc);
-		if(bbbc< lsdep_estimator3_HEdepth2_  ) h_sumCutTSmaxAperLS4->Fill( float(lscounterM1) ,bbbc); 
-		h_sum0TSmaxAperLS4->Fill( float(lscounterM1) ,1.);
 	      }
-		// HEdepth3
-		if(k1+1  ==3  ) {
-		  double bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmaxALS5->Fill(bbbc);
-		  if(bbbc<lsdep_estimator3_HEdepth3_  )h_2DsumTSmaxALS5->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmaxALS5->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmaxAperLS5->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator3_HEdepth3_  ) h_sumCutTSmaxAperLS5->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmaxAperLS5->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplitudeLS3->Fill(bbbc);
-		  if(bbbc>lsdep_estimator4_HEdepth1_  )h_2DsumAmplitudeLS3->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplitudeLS3->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplitudeperLS3->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator4_HEdepth1_  ) h_sumCutAmplitudeperLS3->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplitudeperLS3->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplitudeLS4->Fill(bbbc);
-		  if(bbbc>lsdep_estimator4_HEdepth2_  )h_2DsumAmplitudeLS4->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplitudeLS4->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplitudeperLS4->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator4_HEdepth2_  ) h_sumCutAmplitudeperLS4->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplitudeperLS4->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth3
-		if(k1+1  ==3  ) {
-		  double bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplitudeLS5->Fill(bbbc);
-		  if(bbbc>lsdep_estimator4_HEdepth3_  )h_2DsumAmplitudeLS5->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplitudeLS5->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplitudeperLS5->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator4_HEdepth3_  ) h_sumCutAmplitudeperLS5->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplitudeperLS5->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplLS3->Fill(bbbc);
-		  if(bbbc<lsdep_estimator5_HEdepth1_  )h_2DsumAmplLS3->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplLS3->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplperLS3->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator5_HEdepth1_  ) h_sumCutAmplperLS3->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplperLS3->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplLS4->Fill(bbbc);
-		  if(bbbc<lsdep_estimator5_HEdepth2_  )h_2DsumAmplLS4->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplLS4->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplperLS4->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator5_HEdepth2_  ) h_sumCutAmplperLS4->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplperLS4->Fill( float(lscounterM1) ,1.);
-		}
-		// HEdepth3
-		if(k1+1  ==3  ) {
-		  double bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplLS5->Fill(bbbc);
-		  if(bbbc<lsdep_estimator5_HEdepth3_  )h_2DsumAmplLS5->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplLS5->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplperLS5->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator5_HEdepth3_  ) h_sumCutAmplperLS5->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplperLS5->Fill( float(lscounterM1) ,1.);
-		}
-		
-	      }//k0
-	      
-	      
-	      // HF
-	      if(k0 == 3) {
-		// HFdepth1
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
 		if(k1+1  ==1) {
-		    double bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
-		    h_sumADCAmplLS6->Fill(bbbc);
-		    if(bbbc > lsdep_estimator1_HFdepth1_  ) h_2DsumADCAmplLS6->Fill(double(ieta), double(k3), bbbc);
-		    if(bbbc > 2.*lsdep_estimator1_HFdepth1_  ) h_2DsumADCAmplLS6_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    //		    if( ( lscounterM1 == 1810 ) ) h_2DsumADCAmplLS6_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS6_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    h_2D0sumADCAmplLS6->Fill(double(ieta), double(k3), 1.);
-		    h_sumADCAmplperLS6->Fill( float(lscounterM1) ,bbbc);
-		    if(bbbc > lsdep_estimator1_HFdepth1_  ) h_sumCutADCAmplperLS6->Fill( float(lscounterM1) ,bbbc); 
-		    h_sum0ADCAmplperLS6->Fill( float(lscounterM1) ,1.);
+		  h_sumADCAmplLS3->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HEdepth1_  ) h_2DsumADCAmplLS3->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HEdepth1_  ) h_2DsumADCAmplLS3_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 146 || lscounterM1 == 515 ) ) h_2DsumADCAmplLS3_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS3_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HEdepth1_  ) h_sumCutADCAmplperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS3->Fill( float(lscounterM1) ,bbb1);
+
 		}
-		// HFdepth2
 		if(k1+1  ==2) {
-		    double bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
-		    h_sumADCAmplLS7->Fill(bbbc);
-		    if(bbbc > lsdep_estimator1_HFdepth2_  ) h_2DsumADCAmplLS7->Fill(double(ieta), double(k3), bbbc);
-		    if(bbbc > 2.*lsdep_estimator1_HFdepth2_  ) h_2DsumADCAmplLS7_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    //		    if( ( lscounterM1 == 1810 ) ) h_2DsumADCAmplLS7_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS7_LSselected->Fill(double(ieta), double(k3), bbbc);
-		    h_2D0sumADCAmplLS7->Fill(double(ieta), double(k3), 1.);
-		    h_sumADCAmplperLS7->Fill( float(lscounterM1) ,bbbc);
-		    if(bbbc > lsdep_estimator1_HFdepth2_  ) h_sumCutADCAmplperLS7->Fill( float(lscounterM1) ,bbbc); 
-		    h_sum0ADCAmplperLS7->Fill( float(lscounterM1) ,1.);
+		  h_sumADCAmplLS4->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HEdepth2_  ) h_2DsumADCAmplLS4->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HEdepth2_  ) h_2DsumADCAmplLS4_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 146 || lscounterM1 == 515 ) ) h_2DsumADCAmplLS4_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS4_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HEdepth2_  ) h_sumCutADCAmplperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS4->Fill( float(lscounterM1) ,bbb1);
+
 		}
-		// HFdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmeanALS6->Fill(bbbc);
-		  if(bbbc<lsdep_estimator2_HFdepth1_  )h_2DsumTSmeanALS6->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmeanALS6->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmeanAperLS6->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator2_HFdepth1_  ) h_sumCutTSmeanAperLS6->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmeanAperLS6->Fill( float(lscounterM1) ,1.);
+		if(k1+1  ==3) {
+		  h_sumADCAmplLS5->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HEdepth3_  ) h_2DsumADCAmplLS5->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HEdepth3_  ) h_2DsumADCAmplLS5_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 146 || lscounterM1 == 515 ) ) h_2DsumADCAmplLS5_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS5_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HEdepth3_  ) h_sumCutADCAmplperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS5->Fill( float(lscounterM1) ,bbb1);
+
 		}
-		// HFdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmeanALS7->Fill(bbbc);
-		  if(bbbc<lsdep_estimator2_HFdepth2_  )h_2DsumTSmeanALS7->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmeanALS7->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmeanAperLS7->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator2_HFdepth2_  ) h_sumCutTSmeanAperLS7->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmeanAperLS7->Fill( float(lscounterM1) ,1.);
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+	  	  if (verbosity == -7777 ) std::cout << "HF***sumEstimator1= "  << sumEstimator1[k0][k1][k2][k3] << "sum0Estimator= "  << sum0Estimator[k0][k1][k2][k3] <<" nevcounter0= " << nevcounter0 <<" bbbc= " << bbbc << std::endl;
+		  h_sumADCAmplLS6->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HFdepth1_  ) h_2DsumADCAmplLS6->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HFdepth1_  ) h_2DsumADCAmplLS6_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 1810 ) ) h_2DsumADCAmplLS6_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS6_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HFdepth1_  ) h_sumCutADCAmplperLS6->Fill( float(lscounterM1) ,bbbc); 
+
+		  h_sum0ADCAmplperLS6->Fill( float(lscounterM1) ,bbb1);
+		  /////////////////////////////////////////////////////////
+ 		  if(ieta>0 ){
+		    if(k3<36) {
+		      h_sumADCAmplperLS6_P1->Fill( float(lscounterM1) ,bbbc);
+		      h_sum0ADCAmplperLS6_P1->Fill( float(lscounterM1) ,bbb1);
+		    }
+		    else {
+		      h_sumADCAmplperLS6_P2->Fill( float(lscounterM1) ,bbbc);
+		      h_sum0ADCAmplperLS6_P2->Fill( float(lscounterM1) ,bbb1);
+		    }
+		  ////////////////////////////// P
+		    if(bbbc/bbb1> 20.) {
+		      pcountall += bbb1 ;
+		      pcountmin += bbb1;
+		    }
+		  //////////////////////////////
+
+		  }
+		  else {
+		    if(k3<36) {
+		      h_sumADCAmplperLS6_M1->Fill( float(lscounterM1) ,bbbc);
+		      h_sum0ADCAmplperLS6_M1->Fill( float(lscounterM1) ,bbb1);
+		    }
+		    else {
+		      h_sumADCAmplperLS6_M2->Fill( float(lscounterM1) ,bbbc);
+		      h_sum0ADCAmplperLS6_M2->Fill( float(lscounterM1) ,bbb1);
+		    }
+		  ////////////////////////////// M
+		    if(bbbc/bbb1> 20.) {
+		      mcountall += bbb1 ;
+		      mcountmin += bbb1;
+		    }
+		  //////////////////////////////
+
+		  }
+		  /////////////////////////////////////////////////////////
+		  
+		  
 		}
-		// HFdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmaxALS6->Fill(bbbc);
-		  if(bbbc<lsdep_estimator3_HFdepth1_  )h_2DsumTSmaxALS6->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmaxALS6->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmaxAperLS6->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator3_HFdepth1_  ) h_sumCutTSmaxAperLS6->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmaxAperLS6->Fill( float(lscounterM1) ,1.);
+		if(k1+1  ==2) {
+		  h_sumADCAmplLS7->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HFdepth2_  ) h_2DsumADCAmplLS7->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HFdepth2_  ) h_2DsumADCAmplLS7_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 1810 ) ) h_2DsumADCAmplLS7_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS7_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HFdepth2_  ) h_sumCutADCAmplperLS7->Fill( float(lscounterM1) ,bbbc); 
+
+		  h_sum0ADCAmplperLS7->Fill( float(lscounterM1) ,bbb1);
+
+
+		  if(ieta>0 ){
+		    if(k3<36) {
+		      h_sumADCAmplperLS6_P1->Fill( float(lscounterM1) ,bbbc);
+		      h_sum0ADCAmplperLS6_P1->Fill( float(lscounterM1) ,bbb1);
+		    }
+		    else {
+		      h_sumADCAmplperLS6_P2->Fill( float(lscounterM1) ,bbbc);
+		      h_sum0ADCAmplperLS6_P2->Fill( float(lscounterM1) ,bbb1);
+		    }
+		  }
+		  else {
+		    if(k3<36) {
+		      h_sumADCAmplperLS6_M1->Fill( float(lscounterM1) ,bbbc);
+		      h_sum0ADCAmplperLS6_M1->Fill( float(lscounterM1) ,bbb1);
+		    }
+		    else {
+		      h_sumADCAmplperLS6_M2->Fill( float(lscounterM1) ,bbbc);
+		      h_sum0ADCAmplperLS6_M2->Fill( float(lscounterM1) ,bbb1);
+		    }
+		  }
+
+
+
 		}
-		// HFdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmaxALS7->Fill(bbbc);
-		  if(bbbc<lsdep_estimator3_HFdepth2_  )h_2DsumTSmaxALS7->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmaxALS7->Fill(double(ieta), double(k3), 1.);
-		  h_sumTSmaxAperLS7->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator3_HFdepth2_  ) h_sumCutTSmaxAperLS7->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmaxAperLS7->Fill( float(lscounterM1) ,1.);
-		}
-		
-		// HFdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplitudeLS6->Fill(bbbc);
-		  if(bbbc>lsdep_estimator4_HFdepth1_   )h_2DsumAmplitudeLS6->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplitudeLS6->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplitudeperLS6->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator4_HFdepth1_   ) h_sumCutAmplitudeperLS6->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplitudeperLS6->Fill( float(lscounterM1) ,1.);
-		}
-		// HFdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
-		  if (verbosity == -79 &&  k2==40 && k3 == 50 && lscounterM1 == 76) std::cout << "======>>>>>   nevcounter0=  " << nevcounter0 <<" bbbc= " << bbbc <<" lscounterM1= " << lscounterM1 <<" nevcounter= " << nevcounter <<" sumEstimator4= " << (double)sumEstimator4[k0][k1][k2][k3] << std::endl;
-		  h_sumAmplitudeLS7->Fill(bbbc);
-		  if(bbbc>lsdep_estimator4_HFdepth2_   )h_2DsumAmplitudeLS7->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplitudeLS7->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplitudeperLS7->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc> lsdep_estimator4_HFdepth2_   ) h_sumCutAmplitudeperLS7->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplitudeperLS7->Fill( float(lscounterM1) ,1.);
-		}
-		// HFdepth1
-		if(k1+1  ==1  ) {
-		  double bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplLS6->Fill(bbbc);
-		  if(bbbc<lsdep_estimator5_HFdepth1_  )h_2DsumAmplLS6->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplLS6->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplperLS6->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator5_HFdepth1_  ) h_sumCutAmplperLS6->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplperLS6->Fill( float(lscounterM1) ,1.);
-		}
-		// HFdepth2
-		if(k1+1  ==2  ) {
-		  double bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplLS7->Fill(bbbc);
-		  if(bbbc<lsdep_estimator5_HFdepth2_  )h_2DsumAmplLS7->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplLS7->Fill(double(ieta), double(k3), 1.);
-		  h_sumAmplperLS7->Fill( float(lscounterM1) ,bbbc);
-		  if(bbbc< lsdep_estimator5_HFdepth2_  ) h_sumCutAmplperLS7->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplperLS7->Fill( float(lscounterM1) ,1.);
-		}
-		
-		
-	      }//k0
-	      
+	      }
 	      // HO:
-	      if(k0 == 2 ) {
-		// HOdepth4
+	      if(k0==2) {
+		// HBdepth1
 		if(k1+1  ==4) {
-		  double bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
-		  h_sumADCAmplLS8->Fill(bbbc);
+		  h_sumADCAmplLS8->Fill(bbbc/bbb1);
 		  if(bbbc > lsdep_estimator1_HOdepth4_  ) h_2DsumADCAmplLS8->Fill(double(ieta), double(k3), bbbc);
 		  if(bbbc > 2.*lsdep_estimator1_HOdepth4_  ) h_2DsumADCAmplLS8_LSselected->Fill(double(ieta), double(k3), bbbc);
 		  //		  if( ( lscounterM1 == 14 ) ) h_2DsumADCAmplLS8_LSselected->Fill(double(ieta), double(k3), bbbc);
 		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS8_LSselected->Fill(double(ieta), double(k3), bbbc);
-		  h_2D0sumADCAmplLS8->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumADCAmplLS8->Fill(double(ieta), double(k3), bbb1);
 		  h_sumADCAmplperLS8->Fill( float(lscounterM1) ,bbbc);
 		  if(bbbc > lsdep_estimator1_HOdepth4_  ) h_sumCutADCAmplperLS8->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0ADCAmplperLS8->Fill( float(lscounterM1) ,1.);
+		  h_sum0ADCAmplperLS8->Fill( float(lscounterM1) ,bbb1);
+
 		}
-		if(k1+1  ==4  ) {
-		  double bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmeanALS8->Fill(bbbc);
+	      }
+	    }//if(sumEstimator1[k0][k1][k2][k3] != 0.
+
+
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator2
+	    if (verbosity == -81 ) std::cout << "sumEstimator2 = " <<sumEstimator2[k0][k1][k2][k3]<< std::endl;
+	    if(sumEstimator2[k0][k1][k2][k3] != 0. ) {
+
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator2[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator2[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmeanALS1->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator2_HBdepth1_  )h_2DsumTSmeanALS1->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS1->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator2_HBdepth1_  ) h_sumCutTSmeanAperLS1->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS1->Fill( float(lscounterM1) ,bbb1);
+		  if(bbbc> 2.*lsdep_estimator2_HBdepth1_  ) h_sumTSmeanAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+//		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumTSmeanAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumTSmeanAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmeanALS2->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HBdepth2_  )h_2DsumTSmeanALS2->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS2->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HBdepth2_  ) h_sumCutTSmeanAperLS2->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS2->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmeanALS3->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HEdepth1_  )h_2DsumTSmeanALS3->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HEdepth1_  ) h_sumCutTSmeanAperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS3->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmeanALS4->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HEdepth2_  )h_2DsumTSmeanALS4->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HEdepth2_  ) h_sumCutTSmeanAperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS4->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==3) {
+		  h_sumTSmeanALS5->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HEdepth3_  )h_2DsumTSmeanALS5->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HEdepth3_  ) h_sumCutTSmeanAperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS5->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmeanALS6->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HFdepth1_  )h_2DsumTSmeanALS6->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HFdepth1_  ) h_sumCutTSmeanAperLS6->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS6->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmeanALS7->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HFdepth2_  )h_2DsumTSmeanALS7->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HFdepth2_  ) h_sumCutTSmeanAperLS7->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS7->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumTSmeanALS8->Fill(bbbc/bbb1);
 		  if(bbbc<lsdep_estimator2_HOdepth4_  )h_2DsumTSmeanALS8->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmeanALS8->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumTSmeanALS8->Fill(double(ieta), double(k3), bbb1);
 		  h_sumTSmeanAperLS8->Fill( float(lscounterM1) ,bbbc);
 		  if(bbbc< lsdep_estimator2_HOdepth4_  ) h_sumCutTSmeanAperLS8->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmeanAperLS8->Fill( float(lscounterM1) ,1.);
+		  h_sum0TSmeanAperLS8->Fill( float(lscounterM1) ,bbb1);
+
 		}
-		if(k1+1  ==4  ) {
-		  double bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
-		  h_sumTSmaxALS8->Fill(bbbc);
+	      }
+	    }//if(sumEstimator2[k0][k1][k2][k3] != 0.
+
+
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator3
+	    if (verbosity == -81 ) std::cout << "sumEstimator3 = " <<sumEstimator3[k0][k1][k2][k3]<< std::endl;
+	    if(sumEstimator3[k0][k1][k2][k3] != 0. ) {
+
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator3[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator3[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmaxALS1->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator3_HBdepth1_  )h_2DsumTSmaxALS1->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS1->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator3_HBdepth1_  ) h_sumCutTSmaxAperLS1->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS1->Fill( float(lscounterM1) ,bbb1);
+		  if(bbbc> 2.*lsdep_estimator3_HBdepth1_  ) h_sumTSmaxAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+//		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumTSmaxAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumTSmaxAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmaxALS2->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HBdepth2_  )h_2DsumTSmaxALS2->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS2->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HBdepth2_  ) h_sumCutTSmaxAperLS2->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS2->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmaxALS3->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HEdepth1_  )h_2DsumTSmaxALS3->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HEdepth1_  ) h_sumCutTSmaxAperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS3->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmaxALS4->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HEdepth2_  )h_2DsumTSmaxALS4->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HEdepth2_  ) h_sumCutTSmaxAperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS4->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==3) {
+		  h_sumTSmaxALS5->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HEdepth3_  )h_2DsumTSmaxALS5->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HEdepth3_  ) h_sumCutTSmaxAperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS5->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmaxALS6->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HFdepth1_  )h_2DsumTSmaxALS6->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HFdepth1_  ) h_sumCutTSmaxAperLS6->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS6->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmaxALS7->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HFdepth2_  )h_2DsumTSmaxALS7->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HFdepth2_  ) h_sumCutTSmaxAperLS7->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS7->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumTSmaxALS8->Fill(bbbc/bbb1);
 		  if(bbbc<lsdep_estimator3_HOdepth4_  )h_2DsumTSmaxALS8->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumTSmaxALS8->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumTSmaxALS8->Fill(double(ieta), double(k3), bbb1);
 		  h_sumTSmaxAperLS8->Fill( float(lscounterM1) ,bbbc);
 		  if(bbbc< lsdep_estimator3_HOdepth4_  ) h_sumCutTSmaxAperLS8->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0TSmaxAperLS8->Fill( float(lscounterM1) ,1.);
+		  h_sum0TSmaxAperLS8->Fill( float(lscounterM1) ,bbb1);
+
 		}
-		if(k1+1  ==4  ) {
-		  double bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplitudeLS8->Fill(bbbc);
+	      }
+	    }//if(sumEstimator3[k0][k1][k2][k3] != 0.
+
+
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator4
+	    if (verbosity == -81 ) std::cout << "sumEstimator4 = " <<sumEstimator4[k0][k1][k2][k3]<< std::endl;
+	    if(sumEstimator4[k0][k1][k2][k3] != 0. ) {
+
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator4[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator4[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplitudeLS1->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HBdepth1_  )h_2DsumAmplitudeLS1->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS1->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HBdepth1_  ) h_sumCutAmplitudeperLS1->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS1->Fill( float(lscounterM1) ,bbb1);
+		  if(bbbc> 2.*lsdep_estimator4_HBdepth1_  ) h_sumAmplitudeperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumAmplitudeperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+				  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumAmplitudeperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplitudeLS2->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HBdepth2_  )h_2DsumAmplitudeLS2->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS2->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HBdepth2_  ) h_sumCutAmplitudeperLS2->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS2->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplitudeLS3->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HEdepth1_  )h_2DsumAmplitudeLS3->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HEdepth1_  ) h_sumCutAmplitudeperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS3->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplitudeLS4->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HEdepth2_  )h_2DsumAmplitudeLS4->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HEdepth2_  ) h_sumCutAmplitudeperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS4->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==3) {
+		  h_sumAmplitudeLS5->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HEdepth3_  )h_2DsumAmplitudeLS5->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HEdepth3_  ) h_sumCutAmplitudeperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS5->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplitudeLS6->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HFdepth1_   )h_2DsumAmplitudeLS6->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HFdepth1_   ) h_sumCutAmplitudeperLS6->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS6->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  if (verbosity == -79 &&  k2==40 && k3 == 50 && lscounterM1 == 76) std::cout << "======>>>>>   nevcounter0=  " << nevcounter0 <<" bbbc= " << bbbc <<" lscounterM1= " << lscounterM1 <<" nevcounter= " << nevcounter <<" sumEstimator4= " << (double)sumEstimator4[k0][k1][k2][k3] << std::endl;
+		  h_sumAmplitudeLS7->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HFdepth2_   )h_2DsumAmplitudeLS7->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HFdepth2_   ) h_sumCutAmplitudeperLS7->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS7->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumAmplitudeLS8->Fill(bbbc/bbb1);
 		  if(bbbc>lsdep_estimator4_HOdepth4_   )h_2DsumAmplitudeLS8->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplitudeLS8->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumAmplitudeLS8->Fill(double(ieta), double(k3), bbb1);
 		  h_sumAmplitudeperLS8->Fill( float(lscounterM1) ,bbbc);
 		  if(bbbc> lsdep_estimator4_HOdepth4_   ) h_sumCutAmplitudeperLS8->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplitudeperLS8->Fill( float(lscounterM1) ,1.);
+		  h_sum0AmplitudeperLS8->Fill( float(lscounterM1) ,bbb1);
+
 		}
-		if(k1+1  ==4  ) {
-		  double bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
-		  h_sumAmplLS8->Fill(bbbc);
+	      }
+	    }//if(sumEstimator4[k0][k1][k2][k3] != 0.
+
+
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator5
+	    if (verbosity == -81 ) std::cout << "sumEstimator5 = " <<sumEstimator5[k0][k1][k2][k3]<< std::endl;
+	    if(sumEstimator5[k0][k1][k2][k3] != 0. ) {
+
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator5[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator5[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplLS1->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator5_HBdepth1_  )h_2DsumAmplLS1->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS1->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator5_HBdepth1_  ) h_sumCutAmplperLS1->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS1->Fill( float(lscounterM1) ,bbb1);
+		  if(bbbc> 2.*lsdep_estimator5_HBdepth1_  ) h_sumAmplperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumAmplperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumAmplperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplLS2->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HBdepth2_  )h_2DsumAmplLS2->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS2->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HBdepth2_  ) h_sumCutAmplperLS2->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS2->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplLS3->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HEdepth1_  )h_2DsumAmplLS3->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HEdepth1_  ) h_sumCutAmplperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS3->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplLS4->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HEdepth2_  )h_2DsumAmplLS4->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HEdepth2_  ) h_sumCutAmplperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS4->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==3) {
+		  h_sumAmplLS5->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HEdepth3_  )h_2DsumAmplLS5->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HEdepth3_  ) h_sumCutAmplperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS5->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplLS6->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HFdepth1_  )h_2DsumAmplLS6->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HFdepth1_  ) h_sumCutAmplperLS6->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS6->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplLS7->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HFdepth2_  )h_2DsumAmplLS7->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HFdepth2_  ) h_sumCutAmplperLS7->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS7->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumAmplLS8->Fill(bbbc/bbb1);
 		  if(bbbc<lsdep_estimator5_HOdepth4_  )h_2DsumAmplLS8->Fill(double(ieta),double(k3),bbbc);
-		  h_2D0sumAmplLS8->Fill(double(ieta), double(k3), 1.);
+		  h_2D0sumAmplLS8->Fill(double(ieta), double(k3), bbb1);
 		  h_sumAmplperLS8->Fill( float(lscounterM1) ,bbbc);
 		  if(bbbc< lsdep_estimator5_HOdepth4_  ) h_sumCutAmplperLS8->Fill( float(lscounterM1) ,bbbc); 
-		  h_sum0AmplperLS8->Fill( float(lscounterM1) ,1.);
+		  h_sum0AmplperLS8->Fill( float(lscounterM1) ,bbb1);
+		  
 		}
-		
-	      }//k0
+	      }
+	    }//if(sumEstimator5[k0][k1][k2][k3] != 0.
+	    
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator6
+	    if (verbosity == -81 ) std::cout << "sumEstimator6 = " <<sumEstimator6[k0][k1][k2][k3]<< std::endl;
+	    if(sumEstimator6[k0][k1][k2][k3] != 0. ) {
 	      
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator6[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator6[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator6[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
 	      
-	    }//if   
-	  }//for  
-	}//for  
-      }//for  
-    }//for 
-    
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumErrorBLS6->Fill(bbbc/bbb1);
+		  h_2DsumErrorBLS6->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumErrorBLS6->Fill(double(ieta), double(k3), bbb1);
 
+		  h_sumErrorBperLS6->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0ErrorBperLS6->Fill( float(lscounterM1) ,bbb1);
+		  
+		}
+		if(k1+1  ==2) {
+		  h_sumErrorBLS7->Fill(bbbc/bbb1);
+		  h_2DsumErrorBLS7->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumErrorBLS7->Fill(double(ieta), double(k3), bbb1);
+
+		  h_sumErrorBperLS7->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0ErrorBperLS7->Fill( float(lscounterM1) ,bbb1);
+
+
+		}
+	      }
+
+	    }//if(sumEstimator6[k0][k1][k2][k3] != 0.
+
+
+	    /////////////////////////////////////////////////////////////////////	    
+	    
+	  }//for k2
+
+	if(pcountmin> 0) {
+//	  cout<<" HF+    - pcountmin = "<<   pcountmin    <<" pcountall  = "<<   pcountall    <<endl;
+	  if(pcountmin < pnnmin ) pnnmin = pcountmin;
+	  pcountmin=0;
+	  pnnbins++;
+	}
+	if(mcountmin> 0) {
+//	  cout<<" HF-    - mcountmin = "<<   mcountmin    <<" mcountall  = "<<   mcountall    <<endl;
+	  if(mcountmin < mnnmin ) mnnmin = mcountmin;
+	  mcountmin=0;
+	  mnnbins++;
+	}
+
+	}//for k3
+      }//for k1
+    }//for k0
+    
+    //   cout<<"=============================== lscounterM1 = "<<   (float)lscounterM1    <<endl;
+    //      cout<<" HF+    - pcountall = "<<   pcountall    <<" pnnmin= "<<   pnnmin    <<" pnnbins= "<<   pnnbins    <<" Ave= "<<   pcountall/pnnbins    <<endl;
+    float patiooccupancy =  0.;
+    if(pcountall != 0 ) patiooccupancy =  (float)pnnmin*mnnbins/pcountall;
+    //   if(pnnmin > 0.) cout<<" HF+    - pcountall/pnnbins/pnnmin = "<<   (float)pcountall/pnnbins/pnnmin    <<" patiooccupancy = "<<   patiooccupancy    <<endl;
+     h_RatioOccupancy_HFM->Fill( float(lscounterM1) ,patiooccupancy); 
+    //      cout<<" HF-    - mcountall = "<<   mcountall    <<" mnnmin= "<<   mnnmin    <<" mnnbins= "<<   mnnbins    <<" Ave= "<<   mcountall/mnnbins    <<endl;
+    float matiooccupancy =  0.;
+    if(mcountall != 0 ) matiooccupancy =  (float)mnnmin*mnnbins/mcountall;
+    //   if(mnnmin > 0.) cout<<" HF-    - mcountall/mnnbins/mnnmin = "<<   (float)mcountall/mnnbins/mnnmin    <<" matiooccupancy = "<<   matiooccupancy    <<endl;
+     h_RatioOccupancy_HFP->Fill( float(lscounterM1) ,matiooccupancy); 
+     
+
+    
+    if (verbosity == -5555 ) std::cout << "********************** My NULLing " << std::endl;
     for(int k0 = 0; k0<4; k0++) {
       for(int k1 = 0; k1<4; k1++) {
 	for(int k2 = 0; k2<82; k2++) {
@@ -2647,12 +2986,14 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	    sumEstimator3[k0][k1][k2][k3] = 0.;
 	    sumEstimator4[k0][k1][k2][k3] = 0.;
 	    sumEstimator5[k0][k1][k2][k3] = 0.;
+	    sumEstimator6[k0][k1][k2][k3] = 0.;
+	    sum0Estimator[k0][k1][k2][k3] = 0.;
 	  }//for  
 	}//for  
       }//for  
     }//for 
     
-
+    
   }//if(nevcounter0 != 0)
   
   /*  
@@ -2996,6 +3337,7 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     }//for HODigiCollection
   }//ho.isValid(
 
+  if(flagcpuoptimization_== 0 ) {
   ///////////////////////////////////////////////  for : sumamplitudesubdet.C script:
   //////////// k0(sub): =0 HB; =1 HE; =2 HO; =3 HF;
   //////////// k1(depth-1): = 0 - 3 or depth: = 1 - 4;
@@ -3040,7 +3382,7 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
   
   
   ////////////
-  
+  } 
   
 
   ///////////////////////////////////////////////  for zRunRatio34.C & zRunNbadchan.C scripts:
@@ -3392,26 +3734,28 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
     for(int k1 = 0; k1<4; k1++) {
       for(int k2 = 0; k2<82; k2++) {
 	for(int k3 = 0; k3<72; k3++) {
-	  ////////////////////////////////////////////////////////////////  for zgain.C script:
 	  int k2plot = k2-41;
-	  if(signal[k1][k2][k3]>0.) {
-	    if(k1==0) {
-	      h_FullSignal3D_HB->Fill(double(k2plot), double(k3), signal[k1][k2][k3]);
-	      h_FullSignal3D0_HB->Fill(double(k2plot), double(k3), 1.);    
+	  if(flagcpuoptimization_== 0 ) {
+	    ////////////////////////////////////////////////////////////////  for zgain.C script:
+	    if(signal[k1][k2][k3]>0.) {
+	      if(k1==0) {
+		h_FullSignal3D_HB->Fill(double(k2plot), double(k3), signal[k1][k2][k3]);
+		h_FullSignal3D0_HB->Fill(double(k2plot), double(k3), 1.);    
+	      }
+	      if(k1==1) {
+		h_FullSignal3D_HE->Fill(double(k2plot), double(k3), signal[k1][k2][k3]);
+		h_FullSignal3D0_HE->Fill(double(k2plot), double(k3), 1.);    
+	      }
+	      if(k1==2) {
+		h_FullSignal3D_HO->Fill(double(k2plot), double(k3), signal[k1][k2][k3]);
+		h_FullSignal3D0_HO->Fill(double(k2plot), double(k3), 1.);    
+	      }
+	      if(k1==3) {
+		h_FullSignal3D_HF->Fill(double(k2plot), double(k3), signal[k1][k2][k3]);
+		h_FullSignal3D0_HF->Fill(double(k2plot), double(k3), 1.);    
+	      }
 	    }
-	    if(k1==1) {
-	      h_FullSignal3D_HE->Fill(double(k2plot), double(k3), signal[k1][k2][k3]);
-	      h_FullSignal3D0_HE->Fill(double(k2plot), double(k3), 1.);    
-	    }
-	    if(k1==2) {
-	      h_FullSignal3D_HO->Fill(double(k2plot), double(k3), signal[k1][k2][k3]);
-	      h_FullSignal3D0_HO->Fill(double(k2plot), double(k3), 1.);    
-	    }
-	    if(k1==3) {
-	      h_FullSignal3D_HF->Fill(double(k2plot), double(k3), signal[k1][k2][k3]);
-	      h_FullSignal3D0_HF->Fill(double(k2plot), double(k3), 1.);    
-	    }
-	  }
+	  }// optimization
 	  ////////////////////////////////////////////////////////////////
 
 	  ////////////////////////////////////////////////////////////////  for zcalib.C script:
@@ -3452,40 +3796,41 @@ void VeRawAnalyzer::analyze(const edm::Event& iEvent, const edm::EventSetup& iSe
 	  int kkk3  = kk3;
 	  kkk3 -=1;
 	  	  
-	  double GetRMSOverNormalizedSignal =-1.;
-	  if(signal[k1][k2][k3]>0.&& calib0[k1][kkk2][kkk3]>0.) {
-	    GetRMSOverNormalizedSignal = signal[k1][k2][k3]/calib0[k1][kkk2][kkk3];
-	    if(k1==0) {
-	      h_GetRMSOverNormalizedSignal_HB->Fill(GetRMSOverNormalizedSignal,1.);
-	      h_mapGetRMSOverNormalizedSignal_HB->Fill(double(k2plot),double(k3),GetRMSOverNormalizedSignal);
-	      h_mapGetRMSOverNormalizedSignal0_HB->Fill(double(k2plot),double(k3),1.);
+	  if(flagcpuoptimization_== 0 ) {
+	    double GetRMSOverNormalizedSignal =-1.;
+	    if(signal[k1][k2][k3]>0.&& calib0[k1][kkk2][kkk3]>0.) {
+	      GetRMSOverNormalizedSignal = signal[k1][k2][k3]/calib0[k1][kkk2][kkk3];
+	      if(k1==0) {
+		h_GetRMSOverNormalizedSignal_HB->Fill(GetRMSOverNormalizedSignal,1.);
+		h_mapGetRMSOverNormalizedSignal_HB->Fill(double(k2plot),double(k3),GetRMSOverNormalizedSignal);
+		h_mapGetRMSOverNormalizedSignal0_HB->Fill(double(k2plot),double(k3),1.);
+	      }
+	      if(k1==1) {
+		h_GetRMSOverNormalizedSignal_HE->Fill(GetRMSOverNormalizedSignal,1.);
+		h_mapGetRMSOverNormalizedSignal_HE->Fill(double(k2plot),double(k3),GetRMSOverNormalizedSignal);
+		h_mapGetRMSOverNormalizedSignal0_HE->Fill(double(k2plot),double(k3),1.);
+	      }
+	      if(k1==2) {
+		h_GetRMSOverNormalizedSignal_HO->Fill(GetRMSOverNormalizedSignal,1.);
+		h_mapGetRMSOverNormalizedSignal_HO->Fill(double(k2plot),double(k3),GetRMSOverNormalizedSignal);
+		h_mapGetRMSOverNormalizedSignal0_HO->Fill(double(k2plot),double(k3),1.);
+	      }
+	      if(k1==3) {
+		h_GetRMSOverNormalizedSignal_HF->Fill(GetRMSOverNormalizedSignal,1.);
+		h_mapGetRMSOverNormalizedSignal_HF->Fill(double(k2plot),double(k3),GetRMSOverNormalizedSignal);
+		h_mapGetRMSOverNormalizedSignal0_HF->Fill(double(k2plot),double(k3),1.);
+	      }
 	    }
-	    if(k1==1) {
-	      h_GetRMSOverNormalizedSignal_HE->Fill(GetRMSOverNormalizedSignal,1.);
-	      h_mapGetRMSOverNormalizedSignal_HE->Fill(double(k2plot),double(k3),GetRMSOverNormalizedSignal);
-	      h_mapGetRMSOverNormalizedSignal0_HE->Fill(double(k2plot),double(k3),1.);
+	    // 
+	    GetRMSOverNormalizedSignal =-1.;
+	    if(signal3[k1][k2][k3]>0.&& calib3[k1][kkk2][kkk3]>0.) {
+	      GetRMSOverNormalizedSignal = signal3[k1][k2][k3]/calib3[k1][kkk2][kkk3];
+	      if(k1==0) h_GetRMSOverNormalizedSignal3_HB->Fill(GetRMSOverNormalizedSignal,1.);    
+	      if(k1==1) h_GetRMSOverNormalizedSignal3_HE->Fill(GetRMSOverNormalizedSignal,1.);    
+	      if(k1==2) h_GetRMSOverNormalizedSignal3_HO->Fill(GetRMSOverNormalizedSignal,1.);    
+	      if(k1==3) h_GetRMSOverNormalizedSignal3_HF->Fill(GetRMSOverNormalizedSignal,1.);  
 	    }
-	    if(k1==2) {
-	      h_GetRMSOverNormalizedSignal_HO->Fill(GetRMSOverNormalizedSignal,1.);
-	      h_mapGetRMSOverNormalizedSignal_HO->Fill(double(k2plot),double(k3),GetRMSOverNormalizedSignal);
-	      h_mapGetRMSOverNormalizedSignal0_HO->Fill(double(k2plot),double(k3),1.);
-	    }
-	    if(k1==3) {
-	      h_GetRMSOverNormalizedSignal_HF->Fill(GetRMSOverNormalizedSignal,1.);
-	      h_mapGetRMSOverNormalizedSignal_HF->Fill(double(k2plot),double(k3),GetRMSOverNormalizedSignal);
-	      h_mapGetRMSOverNormalizedSignal0_HF->Fill(double(k2plot),double(k3),1.);
-	    }
-	  }
-	  // 
-	  GetRMSOverNormalizedSignal =-1.;
-	  if(signal3[k1][k2][k3]>0.&& calib3[k1][kkk2][kkk3]>0.) {
-	    GetRMSOverNormalizedSignal = signal3[k1][k2][k3]/calib3[k1][kkk2][kkk3];
-	    if(k1==0) h_GetRMSOverNormalizedSignal3_HB->Fill(GetRMSOverNormalizedSignal,1.);    
-	    if(k1==1) h_GetRMSOverNormalizedSignal3_HE->Fill(GetRMSOverNormalizedSignal,1.);    
-	    if(k1==2) h_GetRMSOverNormalizedSignal3_HO->Fill(GetRMSOverNormalizedSignal,1.);    
-	    if(k1==3) h_GetRMSOverNormalizedSignal3_HF->Fill(GetRMSOverNormalizedSignal,1.);  
-	  }
-
+	  }//optimization
 	  ////////////////////////////////////////////////////////////////  for zcalib....C script:
 	  if(signal[k1][k2][k3]>0.) {
 	    // ADC
@@ -3883,7 +4228,8 @@ void VeRawAnalyzer::beginJob()
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // fullAmplitude:
-    h_ADCAmpl_HF = new TH1F("h_ADCAmpl_HF"," ", 100, 0.,500.);
+//    h_ADCAmpl_HF = new TH1F("h_ADCAmpl_HF"," ", 100, 0.,3000.);
+    h_ADCAmpl_HF = new TH1F("h_ADCAmpl_HF"," ", 100, -300.,3300.);
     h_mapDepth1ADCAmpl225_HF = new TH2F("h_mapDepth1ADCAmpl225_HF"," ", 82, -41., 41., 72, 0., 72.);
     h_mapDepth2ADCAmpl225_HF = new TH2F("h_mapDepth2ADCAmpl225_HF"," ", 82, -41., 41., 72, 0., 72.);
     h_mapDepth1ADCAmpl_HF = new TH2F("h_mapDepth1ADCAmpl_HF"," ", 82, -41., 41., 72, 0., 72.);
@@ -3917,8 +4263,8 @@ void VeRawAnalyzer::beginJob()
     
     ////////////////////////////////////////////////////////////////////////////////////////////////
     // fullAmplitude:
-//    h_ADCAmpl_HO = new TH1F("h_ADCAmpl_HO"," ", 100, 0.,1000.);
-    h_ADCAmpl_HO = new TH1F("h_ADCAmpl_HO"," ", 100, 0.,10000.);
+    h_ADCAmpl_HO = new TH1F("h_ADCAmpl_HO"," ", 100, 0.,3000.);
+    h_ADCAmpl_HO_copy = new TH1F("h_ADCAmpl_HO_copy"," ", 100, 0.,30000.);
     h_mapDepth4ADCAmpl225_HO = new TH2F("h_mapDepth4ADCAmpl225_HO"," ", 82, -41., 41., 72, 0., 72.);
     h_mapDepth4ADCAmpl_HO = new TH2F("h_mapDepth4ADCAmpl_HO"," ", 82, -41., 41., 72, 0., 72.);
     h_TSmeanA_HO = new TH1F("h_TSmeanA_HO"," ", 100, 0.,10.);
@@ -4249,6 +4595,17 @@ void VeRawAnalyzer::beginJob()
     h_2D0sumADCAmplLS8    = new TH2F("h_2D0sumADCAmplLS8"," ",    82, -41., 41., 72, 0., 72.);
     h_sum0ADCAmplperLS8  = new TH1F("h_sum0ADCAmplperLS8"," ",     bac, 1.,bac2);
 
+
+    h_sumADCAmplperLS6_P1  = new TH1F("h_sumADCAmplperLS6_P1"," ",     bac, 1.,bac2);
+    h_sum0ADCAmplperLS6_P1  = new TH1F("h_sum0ADCAmplperLS6_P1"," ",     bac, 1.,bac2);
+    h_sumADCAmplperLS6_P2  = new TH1F("h_sumADCAmplperLS6_P2"," ",     bac, 1.,bac2);
+    h_sum0ADCAmplperLS6_P2  = new TH1F("h_sum0ADCAmplperLS6_P2"," ",     bac, 1.,bac2);
+    h_sumADCAmplperLS6_M1  = new TH1F("h_sumADCAmplperLS6_M1"," ",     bac, 1.,bac2);
+    h_sum0ADCAmplperLS6_M1  = new TH1F("h_sum0ADCAmplperLS6_M1"," ",     bac, 1.,bac2);
+    h_sumADCAmplperLS6_M2  = new TH1F("h_sumADCAmplperLS6_M2"," ",     bac, 1.,bac2);
+    h_sum0ADCAmplperLS6_M2  = new TH1F("h_sum0ADCAmplperLS6_M2"," ",     bac, 1.,bac2);
+
+
     // for estimator2:
 //    float est2 = 6.;
 //    float est21= 4.;
@@ -4429,6 +4786,10 @@ void VeRawAnalyzer::beginJob()
     h_2D0sumAmplitudeLS8    = new TH2F("h_2D0sumAmplitudeLS8"," ",    82, -41., 41., 72, 0., 72.);
     h_sum0AmplitudeperLS8  = new TH1F("h_sum0AmplitudeperLS8"," ",     bac, 1.,bac2);
 
+
+
+
+
     // for estimator5:
     //  float est5 = 0.6;
     //  float est51= 1.0;
@@ -4476,6 +4837,9 @@ void VeRawAnalyzer::beginJob()
     h_2D0sumAmplLS6    = new TH2F("h_2D0sumAmplLS6"," ",    82, -41., 41., 72, 0., 72.);
     h_sum0AmplperLS6  = new TH1F("h_sum0AmplperLS6"," ",     bac, 1.,bac2);
 
+    h_RatioOccupancy_HFP  = new TH1F("h_RatioOccupancy_HFP"," ",     bac, 1.,bac2);
+    h_RatioOccupancy_HFM  = new TH1F("h_RatioOccupancy_HFM"," ",     bac, 1.,bac2);
+
     h_sumAmplLS7   = new TH1F("h_sumAmplLS7"," ",      100,  0.0,lsdep_estimator5_HFdepth2_);
     h_2DsumAmplLS7    = new TH2F("h_2DsumAmplLS7"," ",    82, -41., 41., 72, 0., 72.);
     h_sumAmplperLS7  = new TH1F("h_sumAmplperLS7"," ",     bac, 1.,bac2);
@@ -4489,6 +4853,18 @@ void VeRawAnalyzer::beginJob()
     h_sumCutAmplperLS8  = new TH1F("h_sumCutAmplperLS8"," ",     bac, 1.,bac2);
     h_2D0sumAmplLS8    = new TH2F("h_2D0sumAmplLS8"," ",    82, -41., 41., 72, 0., 72.);
     h_sum0AmplperLS8  = new TH1F("h_sum0AmplperLS8"," ",     bac, 1.,bac2);
+
+    // for estimator6:
+    h_sumErrorBLS6   = new TH1F("h_sumErrorBLS6"," ",      10,  0.,10.);
+    h_sumErrorBperLS6  = new TH1F("h_sumErrorBperLS6"," ",     bac, 1.,bac2);
+    h_sum0ErrorBperLS6  = new TH1F("h_sum0ErrorBperLS6"," ",     bac, 1.,bac2);
+    h_2D0sumErrorBLS6    = new TH2F("h_2D0sumErrorBLS6"," ",    82, -41., 41., 72, 0., 72.);
+    h_2DsumErrorBLS6    = new TH2F("h_2DsumErrorBLS6"," ",    82, -41., 41., 72, 0., 72.);
+    h_sumErrorBLS7   = new TH1F("h_sumErrorBLS7"," ",      10,  0.,10.);
+    h_sumErrorBperLS7  = new TH1F("h_sumErrorBperLS7"," ",     bac, 1.,bac2);
+    h_sum0ErrorBperLS7  = new TH1F("h_sum0ErrorBperLS7"," ",     bac, 1.,bac2);
+    h_2D0sumErrorBLS7    = new TH2F("h_2D0sumErrorBLS7"," ",    82, -41., 41., 72, 0., 72.);
+    h_2DsumErrorBLS7    = new TH2F("h_2DsumErrorBLS7"," ",    82, -41., 41., 72, 0., 72.);
 
 
 
@@ -4746,137 +5122,155 @@ void VeRawAnalyzer::beginJob()
     h_shape_good_channels_HO = new TH1F("h_shape_good_channels_HO"," ", 10, 0., 10.);
     h_shape0_good_channels_HO = new TH1F("h_shape0_good_channels_HO"," ", 10, 0., 10.);
 
+    //    if(flagcpuoptimization_== 0 ) {
+				   int spl= 1000;
+				   float spls=5000;
+				   h_sumamplitude_depth1_HB = new TH1F("h_sumamplitude_depth1_HB"," ", spl, 0.,spls);
+				   h_sumamplitude_depth2_HB = new TH1F("h_sumamplitude_depth2_HB"," ", spl, 0.,spls);
+				   h_sumamplitude_depth1_HE = new TH1F("h_sumamplitude_depth1_HE"," ", spl, 0.,spls);
+				   h_sumamplitude_depth2_HE = new TH1F("h_sumamplitude_depth2_HE"," ", spl, 0.,spls);
+				   h_sumamplitude_depth3_HE = new TH1F("h_sumamplitude_depth3_HE"," ", spl, 0.,spls);
+				   h_sumamplitude_depth1_HF = new TH1F("h_sumamplitude_depth1_HF"," ", spl, 0.,spls);
+				   h_sumamplitude_depth2_HF = new TH1F("h_sumamplitude_depth2_HF"," ", spl, 0.,spls);
+				   h_sumamplitude_depth4_HO = new TH1F("h_sumamplitude_depth4_HO"," ", spl, 0.,spls);
+				   int spl0= 1000;
+				   float spls0=10000;
+				   h_sumamplitude_depth1_HB0 = new TH1F("h_sumamplitude_depth1_HB0"," ", spl0, 0.,spls0);
+				   h_sumamplitude_depth2_HB0 = new TH1F("h_sumamplitude_depth2_HB0"," ", spl0, 0.,spls0);
+				   h_sumamplitude_depth1_HE0 = new TH1F("h_sumamplitude_depth1_HE0"," ", spl0, 0.,spls0);
+				   h_sumamplitude_depth2_HE0 = new TH1F("h_sumamplitude_depth2_HE0"," ", spl0, 0.,spls0);
+				   h_sumamplitude_depth3_HE0 = new TH1F("h_sumamplitude_depth3_HE0"," ", spl0, 0.,spls0);
+				   h_sumamplitude_depth1_HF0 = new TH1F("h_sumamplitude_depth1_HF0"," ", spl0, 0.,spls0);
+				   h_sumamplitude_depth2_HF0 = new TH1F("h_sumamplitude_depth2_HF0"," ", spl0, 0.,spls0);
+				   h_sumamplitude_depth4_HO0 = new TH1F("h_sumamplitude_depth4_HO0"," ", spl0, 0.,spls0);
+				   int spl1= 1000;
+				   float spls1=100000;
+				   h_sumamplitude_depth1_HB1 = new TH1F("h_sumamplitude_depth1_HB1"," ", spl1, 0.,spls1);
+				   h_sumamplitude_depth2_HB1 = new TH1F("h_sumamplitude_depth2_HB1"," ", spl1, 0.,spls1);
+				   h_sumamplitude_depth1_HE1 = new TH1F("h_sumamplitude_depth1_HE1"," ", spl1, 0.,spls1);
+				   h_sumamplitude_depth2_HE1 = new TH1F("h_sumamplitude_depth2_HE1"," ", spl1, 0.,spls1);
+				   h_sumamplitude_depth3_HE1 = new TH1F("h_sumamplitude_depth3_HE1"," ", spl1, 0.,spls1);
+				   h_sumamplitude_depth1_HF1 = new TH1F("h_sumamplitude_depth1_HF1"," ", spl1, 0.,spls1);
+				   h_sumamplitude_depth2_HF1 = new TH1F("h_sumamplitude_depth2_HF1"," ", spl1, 0.,spls1);
+				   h_sumamplitude_depth4_HO1 = new TH1F("h_sumamplitude_depth4_HO1"," ", spl1, 0.,spls1);
+				   
+				   int eall= 1000;
+				   float eall1=splashesUpperLimit_;
+				   
+				   h_ADC_HB = new TH1F("h_ADC_HB"," ", eall, 0.,eall1);  
+				   h_ADC_HE = new TH1F("h_ADC_HE"," ", eall, 0.,eall1);  
+				   h_ADC_HF = new TH1F("h_ADC_HF"," ", eall, 0.,eall1);  
+				   h_ADC_HO = new TH1F("h_ADC_HO"," ", eall, 0.,eall1);  
+				   h_ADC_HBdepth1 = new TH1F("h_ADC_HBdepth1"," ", eall, 0.,eall1);  
+				   h_ADC_HBdepth2 = new TH1F("h_ADC_HBdepth2"," ", eall, 0.,eall1);  
+				   h_ADC_HEdepth1 = new TH1F("h_ADC_HEdepth1"," ", eall, 0.,eall1);  
+				   h_ADC_HEdepth2 = new TH1F("h_ADC_HEdepth2"," ", eall, 0.,eall1);  
+				   h_ADC_HEdepth3 = new TH1F("h_ADC_HEdepth3"," ", eall, 0.,eall1);  
+				   h_ADC_HFdepth1 = new TH1F("h_ADC_HFdepth1"," ", eall, 0.,eall1);  
+				   h_ADC_HFdepth2 = new TH1F("h_ADC_HFdepth2"," ", eall, 0.,eall1);  
+				   h_ADC_HOdepth4 = new TH1F("h_ADC_HOdepth4"," ", eall, 0.,eall1);  
+				   
+				   int each= 100;
+				   float each1=splashesUpperLimit_;
+				   h_ADC_HBdepth1_TS0 = new TH1F("h_ADC_HBdepth1_TS0"," ", each, 0.,each1);  
+				   h_ADC_HBdepth1_TS1 = new TH1F("h_ADC_HBdepth1_TS1"," ", each, 0.,each1);  
+				   h_ADC_HBdepth1_TS2 = new TH1F("h_ADC_HBdepth1_TS2"," ", each, 0.,each1);  
+				   h_ADC_HBdepth1_TS3 = new TH1F("h_ADC_HBdepth1_TS3"," ", each, 0.,each1);  
+				   h_ADC_HBdepth1_TS4 = new TH1F("h_ADC_HBdepth1_TS4"," ", each, 0.,each1);  
+				   h_ADC_HBdepth1_TS5 = new TH1F("h_ADC_HBdepth1_TS5"," ", each, 0.,each1);  
+				   h_ADC_HBdepth1_TS6 = new TH1F("h_ADC_HBdepth1_TS6"," ", each, 0.,each1);  
+				   h_ADC_HBdepth1_TS7 = new TH1F("h_ADC_HBdepth1_TS7"," ", each, 0.,each1);  
+				   h_ADC_HBdepth1_TS8 = new TH1F("h_ADC_HBdepth1_TS8"," ", each, 0.,each1); 
+				   h_ADC_HBdepth1_TS9 = new TH1F("h_ADC_HBdepth1_TS9"," ", each, 0.,each1); 
+				   h_ADC_HBdepth2_TS0 = new TH1F("h_ADC_HBdepth2_TS0"," ", each, 0.,each1);  
+				   h_ADC_HBdepth2_TS1 = new TH1F("h_ADC_HBdepth2_TS1"," ", each, 0.,each1);  
+				   h_ADC_HBdepth2_TS2 = new TH1F("h_ADC_HBdepth2_TS2"," ", each, 0.,each1);  
+				   h_ADC_HBdepth2_TS3 = new TH1F("h_ADC_HBdepth2_TS3"," ", each, 0.,each1);  
+				   h_ADC_HBdepth2_TS4 = new TH1F("h_ADC_HBdepth2_TS4"," ", each, 0.,each1);  
+				   h_ADC_HBdepth2_TS5 = new TH1F("h_ADC_HBdepth2_TS5"," ", each, 0.,each1);  
+				   h_ADC_HBdepth2_TS6 = new TH1F("h_ADC_HBdepth2_TS6"," ", each, 0.,each1);  
+				   h_ADC_HBdepth2_TS7 = new TH1F("h_ADC_HBdepth2_TS7"," ", each, 0.,each1);  
+				   h_ADC_HBdepth2_TS8 = new TH1F("h_ADC_HBdepth2_TS8"," ", each, 0.,each1); 
+				   h_ADC_HBdepth2_TS9 = new TH1F("h_ADC_HBdepth2_TS9"," ", each, 0.,each1); 
+				   h_ADC_HEdepth1_TS0 = new TH1F("h_ADC_HEdepth1_TS0"," ", each, 0.,each1);  
+				   h_ADC_HEdepth1_TS1 = new TH1F("h_ADC_HEdepth1_TS1"," ", each, 0.,each1);  
+				   h_ADC_HEdepth1_TS2 = new TH1F("h_ADC_HEdepth1_TS2"," ", each, 0.,each1);  
+				   h_ADC_HEdepth1_TS3 = new TH1F("h_ADC_HEdepth1_TS3"," ", each, 0.,each1);  
+				   h_ADC_HEdepth1_TS4 = new TH1F("h_ADC_HEdepth1_TS4"," ", each, 0.,each1);  
+				   h_ADC_HEdepth1_TS5 = new TH1F("h_ADC_HEdepth1_TS5"," ", each, 0.,each1);  
+				   h_ADC_HEdepth1_TS6 = new TH1F("h_ADC_HEdepth1_TS6"," ", each, 0.,each1);  
+				   h_ADC_HEdepth1_TS7 = new TH1F("h_ADC_HEdepth1_TS7"," ", each, 0.,each1);  
+				   h_ADC_HEdepth1_TS8 = new TH1F("h_ADC_HEdepth1_TS8"," ", each, 0.,each1); 
+				   h_ADC_HEdepth1_TS9 = new TH1F("h_ADC_HEdepth1_TS9"," ", each, 0.,each1); 
+				   h_ADC_HEdepth2_TS0 = new TH1F("h_ADC_HEdepth2_TS0"," ", each, 0.,each1);  
+				   h_ADC_HEdepth2_TS1 = new TH1F("h_ADC_HEdepth2_TS1"," ", each, 0.,each1);  
+				   h_ADC_HEdepth2_TS2 = new TH1F("h_ADC_HEdepth2_TS2"," ", each, 0.,each1);  
+				   h_ADC_HEdepth2_TS3 = new TH1F("h_ADC_HEdepth2_TS3"," ", each, 0.,each1);  
+				   h_ADC_HEdepth2_TS4 = new TH1F("h_ADC_HEdepth2_TS4"," ", each, 0.,each1);  
+				   h_ADC_HEdepth2_TS5 = new TH1F("h_ADC_HEdepth2_TS5"," ", each, 0.,each1);  
+				   h_ADC_HEdepth2_TS6 = new TH1F("h_ADC_HEdepth2_TS6"," ", each, 0.,each1);  
+				   h_ADC_HEdepth2_TS7 = new TH1F("h_ADC_HEdepth2_TS7"," ", each, 0.,each1);  
+				   h_ADC_HEdepth2_TS8 = new TH1F("h_ADC_HEdepth2_TS8"," ", each, 0.,each1); 
+				   h_ADC_HEdepth2_TS9 = new TH1F("h_ADC_HEdepth2_TS9"," ", each, 0.,each1); 
+				   h_ADC_HEdepth3_TS0 = new TH1F("h_ADC_HEdepth3_TS0"," ", each, 0.,each1);  
+				   h_ADC_HEdepth3_TS1 = new TH1F("h_ADC_HEdepth3_TS1"," ", each, 0.,each1);  
+				   h_ADC_HEdepth3_TS2 = new TH1F("h_ADC_HEdepth3_TS2"," ", each, 0.,each1);  
+				   h_ADC_HEdepth3_TS3 = new TH1F("h_ADC_HEdepth3_TS3"," ", each, 0.,each1);  
+				   h_ADC_HEdepth3_TS4 = new TH1F("h_ADC_HEdepth3_TS4"," ", each, 0.,each1);  
+				   h_ADC_HEdepth3_TS5 = new TH1F("h_ADC_HEdepth3_TS5"," ", each, 0.,each1);  
+				   h_ADC_HEdepth3_TS6 = new TH1F("h_ADC_HEdepth3_TS6"," ", each, 0.,each1);  
+				   h_ADC_HEdepth3_TS7 = new TH1F("h_ADC_HEdepth3_TS7"," ", each, 0.,each1);  
+				   h_ADC_HEdepth3_TS8 = new TH1F("h_ADC_HEdepth3_TS8"," ", each, 0.,each1); 
+				   h_ADC_HEdepth3_TS9 = new TH1F("h_ADC_HEdepth3_TS9"," ", each, 0.,each1); 
+				   h_ADC_HFdepth1_TS0 = new TH1F("h_ADC_HFdepth1_TS0"," ", each, 0.,each1);  
+				   h_ADC_HFdepth1_TS1 = new TH1F("h_ADC_HFdepth1_TS1"," ", each, 0.,each1);  
+				   h_ADC_HFdepth1_TS2 = new TH1F("h_ADC_HFdepth1_TS2"," ", each, 0.,each1);  
+				   h_ADC_HFdepth1_TS3 = new TH1F("h_ADC_HFdepth1_TS3"," ", each, 0.,each1);  
+				   h_ADC_HFdepth1_TS4 = new TH1F("h_ADC_HFdepth1_TS4"," ", each, 0.,each1);  
+				   h_ADC_HFdepth1_TS5 = new TH1F("h_ADC_HFdepth1_TS5"," ", each, 0.,each1);  
+				   h_ADC_HFdepth1_TS6 = new TH1F("h_ADC_HFdepth1_TS6"," ", each, 0.,each1);  
+				   h_ADC_HFdepth1_TS7 = new TH1F("h_ADC_HFdepth1_TS7"," ", each, 0.,each1);  
+				   h_ADC_HFdepth1_TS8 = new TH1F("h_ADC_HFdepth1_TS8"," ", each, 0.,each1); 
+				   h_ADC_HFdepth1_TS9 = new TH1F("h_ADC_HFdepth1_TS9"," ", each, 0.,each1); 
+				   h_ADC_HFdepth2_TS0 = new TH1F("h_ADC_HFdepth2_TS0"," ", each, 0.,each1);  
+				   h_ADC_HFdepth2_TS1 = new TH1F("h_ADC_HFdepth2_TS1"," ", each, 0.,each1);  
+				   h_ADC_HFdepth2_TS2 = new TH1F("h_ADC_HFdepth2_TS2"," ", each, 0.,each1);  
+				   h_ADC_HFdepth2_TS3 = new TH1F("h_ADC_HFdepth2_TS3"," ", each, 0.,each1);  
+				   h_ADC_HFdepth2_TS4 = new TH1F("h_ADC_HFdepth2_TS4"," ", each, 0.,each1);  
+				   h_ADC_HFdepth2_TS5 = new TH1F("h_ADC_HFdepth2_TS5"," ", each, 0.,each1);  
+				   h_ADC_HFdepth2_TS6 = new TH1F("h_ADC_HFdepth2_TS6"," ", each, 0.,each1);  
+				   h_ADC_HFdepth2_TS7 = new TH1F("h_ADC_HFdepth2_TS7"," ", each, 0.,each1);  
+				   h_ADC_HFdepth2_TS8 = new TH1F("h_ADC_HFdepth2_TS8"," ", each, 0.,each1); 
+				   h_ADC_HFdepth2_TS9 = new TH1F("h_ADC_HFdepth2_TS9"," ", each, 0.,each1); 
+				   h_ADC_HOdepth4_TS0 = new TH1F("h_ADC_HOdepth4_TS0"," ", each, 0.,each1);  
+				   h_ADC_HOdepth4_TS1 = new TH1F("h_ADC_HOdepth4_TS1"," ", each, 0.,each1);  
+				   h_ADC_HOdepth4_TS2 = new TH1F("h_ADC_HOdepth4_TS2"," ", each, 0.,each1);  
+				   h_ADC_HOdepth4_TS3 = new TH1F("h_ADC_HOdepth4_TS3"," ", each, 0.,each1);  
+				   h_ADC_HOdepth4_TS4 = new TH1F("h_ADC_HOdepth4_TS4"," ", each, 0.,each1);  
+				   h_ADC_HOdepth4_TS5 = new TH1F("h_ADC_HOdepth4_TS5"," ", each, 0.,each1);  
+				   h_ADC_HOdepth4_TS6 = new TH1F("h_ADC_HOdepth4_TS6"," ", each, 0.,each1);  
+				   h_ADC_HOdepth4_TS7 = new TH1F("h_ADC_HOdepth4_TS7"," ", each, 0.,each1);  
+				   h_ADC_HOdepth4_TS8 = new TH1F("h_ADC_HOdepth4_TS8"," ", each, 0.,each1); 
+				   h_ADC_HOdepth4_TS9 = new TH1F("h_ADC_HOdepth4_TS9"," ", each, 0.,each1); 
+				   //				   }
+    
+    h_Amplitude_forCapIdErrors_HB1 = new TH1F("h_Amplitude_forCapIdErrors_HB1"," ", 100, 0.,30000.);
+    h_Amplitude_forCapIdErrors_HB2 = new TH1F("h_Amplitude_forCapIdErrors_HB2"," ", 100, 0.,30000.);
+    h_Amplitude_forCapIdErrors_HE1 = new TH1F("h_Amplitude_forCapIdErrors_HE1"," ", 100, 0.,30000.);
+    h_Amplitude_forCapIdErrors_HE2 = new TH1F("h_Amplitude_forCapIdErrors_HE2"," ", 100, 0.,30000.);
+    h_Amplitude_forCapIdErrors_HE3 = new TH1F("h_Amplitude_forCapIdErrors_HE3"," ", 100, 0.,30000.);
+    h_Amplitude_forCapIdErrors_HF1 = new TH1F("h_Amplitude_forCapIdErrors_HF1"," ", 100, 0.,30000.);
+    h_Amplitude_forCapIdErrors_HF2 = new TH1F("h_Amplitude_forCapIdErrors_HF2"," ", 100, 0.,30000.);
+    h_Amplitude_forCapIdErrors_HO4 = new TH1F("h_Amplitude_forCapIdErrors_HO4"," ", 100, 0.,30000.);
 
-    int spl= 1000;
-    float spls=5000;
-    h_sumamplitude_depth1_HB = new TH1F("h_sumamplitude_depth1_HB"," ", spl, 0.,spls);
-    h_sumamplitude_depth2_HB = new TH1F("h_sumamplitude_depth2_HB"," ", spl, 0.,spls);
-    h_sumamplitude_depth1_HE = new TH1F("h_sumamplitude_depth1_HE"," ", spl, 0.,spls);
-    h_sumamplitude_depth2_HE = new TH1F("h_sumamplitude_depth2_HE"," ", spl, 0.,spls);
-    h_sumamplitude_depth3_HE = new TH1F("h_sumamplitude_depth3_HE"," ", spl, 0.,spls);
-    h_sumamplitude_depth1_HF = new TH1F("h_sumamplitude_depth1_HF"," ", spl, 0.,spls);
-    h_sumamplitude_depth2_HF = new TH1F("h_sumamplitude_depth2_HF"," ", spl, 0.,spls);
-    h_sumamplitude_depth4_HO = new TH1F("h_sumamplitude_depth4_HO"," ", spl, 0.,spls);
-    int spl0= 1000;
-    float spls0=10000;
-    h_sumamplitude_depth1_HB0 = new TH1F("h_sumamplitude_depth1_HB0"," ", spl0, 0.,spls0);
-    h_sumamplitude_depth2_HB0 = new TH1F("h_sumamplitude_depth2_HB0"," ", spl0, 0.,spls0);
-    h_sumamplitude_depth1_HE0 = new TH1F("h_sumamplitude_depth1_HE0"," ", spl0, 0.,spls0);
-    h_sumamplitude_depth2_HE0 = new TH1F("h_sumamplitude_depth2_HE0"," ", spl0, 0.,spls0);
-    h_sumamplitude_depth3_HE0 = new TH1F("h_sumamplitude_depth3_HE0"," ", spl0, 0.,spls0);
-    h_sumamplitude_depth1_HF0 = new TH1F("h_sumamplitude_depth1_HF0"," ", spl0, 0.,spls0);
-    h_sumamplitude_depth2_HF0 = new TH1F("h_sumamplitude_depth2_HF0"," ", spl0, 0.,spls0);
-    h_sumamplitude_depth4_HO0 = new TH1F("h_sumamplitude_depth4_HO0"," ", spl0, 0.,spls0);
-    int spl1= 1000;
-    float spls1=100000;
-    h_sumamplitude_depth1_HB1 = new TH1F("h_sumamplitude_depth1_HB1"," ", spl1, 0.,spls1);
-    h_sumamplitude_depth2_HB1 = new TH1F("h_sumamplitude_depth2_HB1"," ", spl1, 0.,spls1);
-    h_sumamplitude_depth1_HE1 = new TH1F("h_sumamplitude_depth1_HE1"," ", spl1, 0.,spls1);
-    h_sumamplitude_depth2_HE1 = new TH1F("h_sumamplitude_depth2_HE1"," ", spl1, 0.,spls1);
-    h_sumamplitude_depth3_HE1 = new TH1F("h_sumamplitude_depth3_HE1"," ", spl1, 0.,spls1);
-    h_sumamplitude_depth1_HF1 = new TH1F("h_sumamplitude_depth1_HF1"," ", spl1, 0.,spls1);
-    h_sumamplitude_depth2_HF1 = new TH1F("h_sumamplitude_depth2_HF1"," ", spl1, 0.,spls1);
-    h_sumamplitude_depth4_HO1 = new TH1F("h_sumamplitude_depth4_HO1"," ", spl1, 0.,spls1);
-
-    int eall= 1000;
-    float eall1=splashesUpperLimit_;
-
-    h_ADC_HB = new TH1F("h_ADC_HB"," ", eall, 0.,eall1);  
-    h_ADC_HE = new TH1F("h_ADC_HE"," ", eall, 0.,eall1);  
-    h_ADC_HF = new TH1F("h_ADC_HF"," ", eall, 0.,eall1);  
-    h_ADC_HO = new TH1F("h_ADC_HO"," ", eall, 0.,eall1);  
-    h_ADC_HBdepth1 = new TH1F("h_ADC_HBdepth1"," ", eall, 0.,eall1);  
-    h_ADC_HBdepth2 = new TH1F("h_ADC_HBdepth2"," ", eall, 0.,eall1);  
-    h_ADC_HEdepth1 = new TH1F("h_ADC_HEdepth1"," ", eall, 0.,eall1);  
-    h_ADC_HEdepth2 = new TH1F("h_ADC_HEdepth2"," ", eall, 0.,eall1);  
-    h_ADC_HEdepth3 = new TH1F("h_ADC_HEdepth3"," ", eall, 0.,eall1);  
-    h_ADC_HFdepth1 = new TH1F("h_ADC_HFdepth1"," ", eall, 0.,eall1);  
-    h_ADC_HFdepth2 = new TH1F("h_ADC_HFdepth2"," ", eall, 0.,eall1);  
-    h_ADC_HOdepth4 = new TH1F("h_ADC_HOdepth4"," ", eall, 0.,eall1);  
-
-    int each= 100;
-    float each1=splashesUpperLimit_;
-    h_ADC_HBdepth1_TS0 = new TH1F("h_ADC_HBdepth1_TS0"," ", each, 0.,each1);  
-    h_ADC_HBdepth1_TS1 = new TH1F("h_ADC_HBdepth1_TS1"," ", each, 0.,each1);  
-    h_ADC_HBdepth1_TS2 = new TH1F("h_ADC_HBdepth1_TS2"," ", each, 0.,each1);  
-    h_ADC_HBdepth1_TS3 = new TH1F("h_ADC_HBdepth1_TS3"," ", each, 0.,each1);  
-    h_ADC_HBdepth1_TS4 = new TH1F("h_ADC_HBdepth1_TS4"," ", each, 0.,each1);  
-    h_ADC_HBdepth1_TS5 = new TH1F("h_ADC_HBdepth1_TS5"," ", each, 0.,each1);  
-    h_ADC_HBdepth1_TS6 = new TH1F("h_ADC_HBdepth1_TS6"," ", each, 0.,each1);  
-    h_ADC_HBdepth1_TS7 = new TH1F("h_ADC_HBdepth1_TS7"," ", each, 0.,each1);  
-    h_ADC_HBdepth1_TS8 = new TH1F("h_ADC_HBdepth1_TS8"," ", each, 0.,each1); 
-    h_ADC_HBdepth1_TS9 = new TH1F("h_ADC_HBdepth1_TS9"," ", each, 0.,each1); 
-    h_ADC_HBdepth2_TS0 = new TH1F("h_ADC_HBdepth2_TS0"," ", each, 0.,each1);  
-    h_ADC_HBdepth2_TS1 = new TH1F("h_ADC_HBdepth2_TS1"," ", each, 0.,each1);  
-    h_ADC_HBdepth2_TS2 = new TH1F("h_ADC_HBdepth2_TS2"," ", each, 0.,each1);  
-    h_ADC_HBdepth2_TS3 = new TH1F("h_ADC_HBdepth2_TS3"," ", each, 0.,each1);  
-    h_ADC_HBdepth2_TS4 = new TH1F("h_ADC_HBdepth2_TS4"," ", each, 0.,each1);  
-    h_ADC_HBdepth2_TS5 = new TH1F("h_ADC_HBdepth2_TS5"," ", each, 0.,each1);  
-    h_ADC_HBdepth2_TS6 = new TH1F("h_ADC_HBdepth2_TS6"," ", each, 0.,each1);  
-    h_ADC_HBdepth2_TS7 = new TH1F("h_ADC_HBdepth2_TS7"," ", each, 0.,each1);  
-    h_ADC_HBdepth2_TS8 = new TH1F("h_ADC_HBdepth2_TS8"," ", each, 0.,each1); 
-    h_ADC_HBdepth2_TS9 = new TH1F("h_ADC_HBdepth2_TS9"," ", each, 0.,each1); 
-    h_ADC_HEdepth1_TS0 = new TH1F("h_ADC_HEdepth1_TS0"," ", each, 0.,each1);  
-    h_ADC_HEdepth1_TS1 = new TH1F("h_ADC_HEdepth1_TS1"," ", each, 0.,each1);  
-    h_ADC_HEdepth1_TS2 = new TH1F("h_ADC_HEdepth1_TS2"," ", each, 0.,each1);  
-    h_ADC_HEdepth1_TS3 = new TH1F("h_ADC_HEdepth1_TS3"," ", each, 0.,each1);  
-    h_ADC_HEdepth1_TS4 = new TH1F("h_ADC_HEdepth1_TS4"," ", each, 0.,each1);  
-    h_ADC_HEdepth1_TS5 = new TH1F("h_ADC_HEdepth1_TS5"," ", each, 0.,each1);  
-    h_ADC_HEdepth1_TS6 = new TH1F("h_ADC_HEdepth1_TS6"," ", each, 0.,each1);  
-    h_ADC_HEdepth1_TS7 = new TH1F("h_ADC_HEdepth1_TS7"," ", each, 0.,each1);  
-    h_ADC_HEdepth1_TS8 = new TH1F("h_ADC_HEdepth1_TS8"," ", each, 0.,each1); 
-    h_ADC_HEdepth1_TS9 = new TH1F("h_ADC_HEdepth1_TS9"," ", each, 0.,each1); 
-    h_ADC_HEdepth2_TS0 = new TH1F("h_ADC_HEdepth2_TS0"," ", each, 0.,each1);  
-    h_ADC_HEdepth2_TS1 = new TH1F("h_ADC_HEdepth2_TS1"," ", each, 0.,each1);  
-    h_ADC_HEdepth2_TS2 = new TH1F("h_ADC_HEdepth2_TS2"," ", each, 0.,each1);  
-    h_ADC_HEdepth2_TS3 = new TH1F("h_ADC_HEdepth2_TS3"," ", each, 0.,each1);  
-    h_ADC_HEdepth2_TS4 = new TH1F("h_ADC_HEdepth2_TS4"," ", each, 0.,each1);  
-    h_ADC_HEdepth2_TS5 = new TH1F("h_ADC_HEdepth2_TS5"," ", each, 0.,each1);  
-    h_ADC_HEdepth2_TS6 = new TH1F("h_ADC_HEdepth2_TS6"," ", each, 0.,each1);  
-    h_ADC_HEdepth2_TS7 = new TH1F("h_ADC_HEdepth2_TS7"," ", each, 0.,each1);  
-    h_ADC_HEdepth2_TS8 = new TH1F("h_ADC_HEdepth2_TS8"," ", each, 0.,each1); 
-    h_ADC_HEdepth2_TS9 = new TH1F("h_ADC_HEdepth2_TS9"," ", each, 0.,each1); 
-    h_ADC_HEdepth3_TS0 = new TH1F("h_ADC_HEdepth3_TS0"," ", each, 0.,each1);  
-    h_ADC_HEdepth3_TS1 = new TH1F("h_ADC_HEdepth3_TS1"," ", each, 0.,each1);  
-    h_ADC_HEdepth3_TS2 = new TH1F("h_ADC_HEdepth3_TS2"," ", each, 0.,each1);  
-    h_ADC_HEdepth3_TS3 = new TH1F("h_ADC_HEdepth3_TS3"," ", each, 0.,each1);  
-    h_ADC_HEdepth3_TS4 = new TH1F("h_ADC_HEdepth3_TS4"," ", each, 0.,each1);  
-    h_ADC_HEdepth3_TS5 = new TH1F("h_ADC_HEdepth3_TS5"," ", each, 0.,each1);  
-    h_ADC_HEdepth3_TS6 = new TH1F("h_ADC_HEdepth3_TS6"," ", each, 0.,each1);  
-    h_ADC_HEdepth3_TS7 = new TH1F("h_ADC_HEdepth3_TS7"," ", each, 0.,each1);  
-    h_ADC_HEdepth3_TS8 = new TH1F("h_ADC_HEdepth3_TS8"," ", each, 0.,each1); 
-    h_ADC_HEdepth3_TS9 = new TH1F("h_ADC_HEdepth3_TS9"," ", each, 0.,each1); 
-    h_ADC_HFdepth1_TS0 = new TH1F("h_ADC_HFdepth1_TS0"," ", each, 0.,each1);  
-    h_ADC_HFdepth1_TS1 = new TH1F("h_ADC_HFdepth1_TS1"," ", each, 0.,each1);  
-    h_ADC_HFdepth1_TS2 = new TH1F("h_ADC_HFdepth1_TS2"," ", each, 0.,each1);  
-    h_ADC_HFdepth1_TS3 = new TH1F("h_ADC_HFdepth1_TS3"," ", each, 0.,each1);  
-    h_ADC_HFdepth1_TS4 = new TH1F("h_ADC_HFdepth1_TS4"," ", each, 0.,each1);  
-    h_ADC_HFdepth1_TS5 = new TH1F("h_ADC_HFdepth1_TS5"," ", each, 0.,each1);  
-    h_ADC_HFdepth1_TS6 = new TH1F("h_ADC_HFdepth1_TS6"," ", each, 0.,each1);  
-    h_ADC_HFdepth1_TS7 = new TH1F("h_ADC_HFdepth1_TS7"," ", each, 0.,each1);  
-    h_ADC_HFdepth1_TS8 = new TH1F("h_ADC_HFdepth1_TS8"," ", each, 0.,each1); 
-    h_ADC_HFdepth1_TS9 = new TH1F("h_ADC_HFdepth1_TS9"," ", each, 0.,each1); 
-    h_ADC_HFdepth2_TS0 = new TH1F("h_ADC_HFdepth2_TS0"," ", each, 0.,each1);  
-    h_ADC_HFdepth2_TS1 = new TH1F("h_ADC_HFdepth2_TS1"," ", each, 0.,each1);  
-    h_ADC_HFdepth2_TS2 = new TH1F("h_ADC_HFdepth2_TS2"," ", each, 0.,each1);  
-    h_ADC_HFdepth2_TS3 = new TH1F("h_ADC_HFdepth2_TS3"," ", each, 0.,each1);  
-    h_ADC_HFdepth2_TS4 = new TH1F("h_ADC_HFdepth2_TS4"," ", each, 0.,each1);  
-    h_ADC_HFdepth2_TS5 = new TH1F("h_ADC_HFdepth2_TS5"," ", each, 0.,each1);  
-    h_ADC_HFdepth2_TS6 = new TH1F("h_ADC_HFdepth2_TS6"," ", each, 0.,each1);  
-    h_ADC_HFdepth2_TS7 = new TH1F("h_ADC_HFdepth2_TS7"," ", each, 0.,each1);  
-    h_ADC_HFdepth2_TS8 = new TH1F("h_ADC_HFdepth2_TS8"," ", each, 0.,each1); 
-    h_ADC_HFdepth2_TS9 = new TH1F("h_ADC_HFdepth2_TS9"," ", each, 0.,each1); 
-    h_ADC_HOdepth4_TS0 = new TH1F("h_ADC_HOdepth4_TS0"," ", each, 0.,each1);  
-    h_ADC_HOdepth4_TS1 = new TH1F("h_ADC_HOdepth4_TS1"," ", each, 0.,each1);  
-    h_ADC_HOdepth4_TS2 = new TH1F("h_ADC_HOdepth4_TS2"," ", each, 0.,each1);  
-    h_ADC_HOdepth4_TS3 = new TH1F("h_ADC_HOdepth4_TS3"," ", each, 0.,each1);  
-    h_ADC_HOdepth4_TS4 = new TH1F("h_ADC_HOdepth4_TS4"," ", each, 0.,each1);  
-    h_ADC_HOdepth4_TS5 = new TH1F("h_ADC_HOdepth4_TS5"," ", each, 0.,each1);  
-    h_ADC_HOdepth4_TS6 = new TH1F("h_ADC_HOdepth4_TS6"," ", each, 0.,each1);  
-    h_ADC_HOdepth4_TS7 = new TH1F("h_ADC_HOdepth4_TS7"," ", each, 0.,each1);  
-    h_ADC_HOdepth4_TS8 = new TH1F("h_ADC_HOdepth4_TS8"," ", each, 0.,each1); 
-    h_ADC_HOdepth4_TS9 = new TH1F("h_ADC_HOdepth4_TS9"," ", each, 0.,each1); 
-
+    h_Amplitude_notCapIdErrors_HB1 = new TH1F("h_Amplitude_notCapIdErrors_HB1"," ", 100, 0.,30000.);
+    h_Amplitude_notCapIdErrors_HB2 = new TH1F("h_Amplitude_notCapIdErrors_HB2"," ", 100, 0.,30000.);
+    h_Amplitude_notCapIdErrors_HE1 = new TH1F("h_Amplitude_notCapIdErrors_HE1"," ", 100, 0.,30000.);
+    h_Amplitude_notCapIdErrors_HE2 = new TH1F("h_Amplitude_notCapIdErrors_HE2"," ", 100, 0.,30000.);
+    h_Amplitude_notCapIdErrors_HE3 = new TH1F("h_Amplitude_notCapIdErrors_HE3"," ", 100, 0.,30000.);
+    h_Amplitude_notCapIdErrors_HF1 = new TH1F("h_Amplitude_notCapIdErrors_HF1"," ", 100, 0.,30000.);
+    h_Amplitude_notCapIdErrors_HF2 = new TH1F("h_Amplitude_notCapIdErrors_HF2"," ", 100, 0.,30000.);
+    h_Amplitude_notCapIdErrors_HO4 = new TH1F("h_Amplitude_notCapIdErrors_HO4"," ", 100, 0.,30000.);
 
     ////////////////////////////////////////////////////////////////////////////////////
   }//if(recordHistoes_
@@ -5431,7 +5825,7 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
     const HcalTimeCorr* timecorr = conditions->getHcalTimeCorr(cell);
     const HcalLUTCorr* lutcorr = conditions->getHcalLUTCorr(cell);
     //
-    HcalCalibrations calib = conditions->getHcalCalibrations(cell);
+    //    HcalCalibrations calib = conditions->getHcalCalibrations(cell);
 
 
     const HcalQIECoder* channelCoder = conditions->getHcalCoder(cell);
@@ -5468,9 +5862,11 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
     double difpedestal3 = 0.;
 
     double amplitude = 0.;
+    double absamplitude = 0.;
     double amplitude345 = 0.;
     double ampl = 0.;
     double timew = 0.;
+    double timeww = 0.;
     double max_signal = -100.;
     int ts_with_max_signal = -100;
     int c0=0;
@@ -5496,8 +5892,9 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
       if( useADCcounts_ ) {ampldefault = ampldefault2;}
 
       int capid = ((*digiItr)[ii]).capid();
-      double pedestal = calib.pedestal(capid);
+      //      double pedestal = calib.pedestal(capid);
       double pedestalINI = pedestal00->getValue(capid);
+      double pedestal = pedestal00->getValue(capid);
       double pedestalw= pedw->getSigma(capid,capid);
 
       if (verbosity == -81 && sub == 1) std::cout << "HB ii = " <<ii<< " massive = " <<ampldefault0<< " adcfC = " <<ampldefault1<< "  ADCcounts= " <<ampldefault2<< " pedestal = " << pedestal <<  " capid = " <<capid<< std::endl;
@@ -5512,6 +5909,8 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
 
       pedestalaver9 +=  pedestal;    
       pedestalwaver9 +=  pedestalw*pedestalw;    
+      //      if (verbosity == -5555 && sub==1 ) std::cout << "HB ii = " <<ii<< " massive = " <<ampldefault0<< " adcfC = " <<ampldefault1<< "  ADCcounts= " <<ampldefault2<< " pedestal = " << pedestal <<  " capid = " <<capid<< std::endl;
+
 
       if(capid == 0 && c0 == 0) {
 	c0++;   c4++;
@@ -5552,9 +5951,12 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
 	ts_with_max_signal = ii;
       }
       amplitude+=ampldefault;// fC
+      absamplitude+=abs(ampldefault);// fC
+
       if(ii ==3 || ii==4 || ii==5) amplitude345+=ampldefault;  
 
 
+      if(flagcpuoptimization_== 0 ) {
       // if(ii == 0 ) amplitude0+=ampldefault;// fC    
       // if(ii == 1 ) amplitude1+=ampldefault;// fC  
       //  
@@ -5637,9 +6039,10 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
 	if(sub == 2 && mdepth == 3 )  h_ADC_HEdepth3_TS9->Fill(ampldefault, 1.);
       }
   //////      
-
+	}//flagcpuoptimization
       if (verbosity == -22) std::cout << "fillDigiAmplitude    amplitude = " << amplitude << std::endl;
-      timew += (ii+1)*ampldefault;
+      timew += (ii+1)*abs(ampldefault);
+      timeww += (ii+1)*ampldefault;
     }//for 1
     amplitudechannel[sub-1][mdepth-1][ieta+41][iphi] += amplitude;// 0-82 ; 0-71
 
@@ -5687,7 +6090,9 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
 
     
     double aveamplitude = 0.;
-    if(amplitude >0 && timew >0)  aveamplitude = timew/amplitude;// average_TS +1
+    double aveamplitudew = 0.;
+    if(absamplitude >0 && timew >0)  aveamplitude = timew/absamplitude;// average_TS +1
+    if(amplitude >0 && timeww >0)  aveamplitudew = timeww/amplitude;// average_TS +1
     
     double rmsamp = 0.;
     // and CapIdErrors:
@@ -5699,7 +6104,7 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
     int capid=0;
     if (verbosity == -222) std::cout << "* TSsize = " <<TSsize<< "* tool[0] = " <<tool[0]  << std::endl;
     for (int ii=0; ii<TSsize; ii++) {  
-      double aaaaaa = (ii+1)-aveamplitude;
+      double aaaaaa = (ii+1)-aveamplitudew;
       double aaaaaa2 = aaaaaa*aaaaaa;
       double ampldefault = tool[ii];
       rmsamp+=(aaaaaa2*ampldefault);// fC
@@ -5725,6 +6130,23 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
 //      if( !anydv) std::cout << "333333333: ii = " << ii  << " capid = " << capid  << std::endl;
 //    }
     // CapIdErrors end  /////////////////////////////////////////////////////////
+    
+    // AZ 1.10.2015:
+    if(error == 1 ) {
+      if(sub == 1 && mdepth == 1 )  h_Amplitude_forCapIdErrors_HB1->Fill(amplitude, 1.);
+      if(sub == 1 && mdepth == 2 )  h_Amplitude_forCapIdErrors_HB2->Fill(amplitude, 1.);
+      if(sub == 2 && mdepth == 1 )  h_Amplitude_forCapIdErrors_HE1->Fill(amplitude, 1.);
+      if(sub == 2 && mdepth == 2 )  h_Amplitude_forCapIdErrors_HE2->Fill(amplitude, 1.);
+      if(sub == 2 && mdepth == 3 )  h_Amplitude_forCapIdErrors_HE3->Fill(amplitude, 1.);
+    }
+    if(error != 1 ) {
+      if(sub == 1 && mdepth == 1 )  h_Amplitude_notCapIdErrors_HB1->Fill(amplitude, 1.);
+      if(sub == 1 && mdepth == 2 )  h_Amplitude_notCapIdErrors_HB2->Fill(amplitude, 1.);
+      if(sub == 2 && mdepth == 1 )  h_Amplitude_notCapIdErrors_HE1->Fill(amplitude, 1.);
+      if(sub == 2 && mdepth == 2 )  h_Amplitude_notCapIdErrors_HE2->Fill(amplitude, 1.);
+      if(sub == 2 && mdepth == 3 )  h_Amplitude_notCapIdErrors_HE3->Fill(amplitude, 1.);
+    }
+    
     
     for (int ii=0; ii<TSsize; ii++) {  
       //  for (int ii=0; ii<10; ii++) {  
@@ -5830,6 +6252,11 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
     
 
     ///////////////////////////////////////Digis
+
+    sum0Estimator[sub-1][mdepth-1][ieta+41][iphi] += 1.;
+
+
+
     //    sumEstimator0[sub-1][mdepth-1][ieta+41][iphi] += pedestalw0;//Sig_Pedestals
     sumEstimator0[sub-1][mdepth-1][ieta+41][iphi] += pedestal0;//Pedestals
     if (verbosity == -81 && sub == 1) std::cout << "HB pedestalaver = " <<pedestalaver9<< "sumEstimator0 = " <<sumEstimator0[sub-1][mdepth-1][ieta+41][iphi]<< std::endl;
@@ -5950,10 +6377,9 @@ void VeRawAnalyzer::fillDigiAmplitude(HBHEDigiCollection::const_iterator& digiIt
 	if(mdepth==1) h_mapDepth1ADCAmpl12_HB->Fill(double(ieta), double(iphi), ampl);
 	if(mdepth==2) h_mapDepth2ADCAmpl12_HB->Fill(double(ieta), double(iphi), ampl);
 
-	if(amplitude > forallestimators_amplitude_bigger_) sumEstimator1[sub-1][mdepth-1][ieta+41][iphi] += amplitude;
+	  if(amplitude > forallestimators_amplitude_bigger_) sumEstimator1[sub-1][mdepth-1][ieta+41][iphi] += amplitude;
 
-
-
+	  	  if (verbosity == -5555 && sub==1 && mdepth==1&&ieta==15&&iphi==18) std::cout << "***ADCAmpl: "  <<" ieta= " << ieta <<" iphi= " << iphi <<" aveamplitude1= " << aveamplitude1 <<" amplitude= " << amplitude << "sumEstimator1[sub-1][mdepth-1][ieta+41][iphi]= "  << sumEstimator1[sub-1][mdepth-1][ieta+41][iphi]  << std::endl;	
 
       }//if(studyADCAmplHist_
       ///////////////////////////////
@@ -6278,7 +6704,7 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
     const HcalTimeCorr* timecorr = conditions->getHcalTimeCorr(cell);
     const HcalLUTCorr* lutcorr = conditions->getHcalLUTCorr(cell);
     // Energy: 
-    HcalCalibrations calib = conditions->getHcalCalibrations(cell);
+    //    HcalCalibrations calib = conditions->getHcalCalibrations(cell);
     const HcalQIECoder* channelCoder = conditions->getHcalCoder(cell);
     const HcalPedestalWidth* pedw = conditions->getPedestalWidth(cell);
 
@@ -6300,8 +6726,10 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
     double pedestalw2 = 0.;
     double pedestalw3 = 0.;
     double amplitude = 0.;
+    double absamplitude = 0.;
     double ampl = 0.;
     double timew = 0.;
+    double timeww = 0.;
     double max_signal = -100.;
     int ts_with_max_signal = -100;
     int c0=0;
@@ -6309,7 +6737,13 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
     int c2=0;
     int c3=0;
     int c4=0;
-    int TSsize = 10;
+    double errorBtype = 0.;  
+
+    //  TSsize=digiItr->size();
+    //    int TSsize = 10;
+    int TSsize = 4;
+    //     if((*digiItr).size() >  4) std::cout << "TSsize HF > 4 and = " <<(*digiItr).size()<< std::endl;
+    if((*digiItr).size() >  TSsize) errorBtype = 1.; 
     ////// 
     for (int ii=0; ii<TSsize; ii++) {  
       double ampldefault = 0.;
@@ -6324,11 +6758,11 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
       if( useADCcounts_ ) {ampldefault = ampldefault2;}
 
       int capid = ((*digiItr)[ii]).capid();
-      double pedestal = calib.pedestal(capid);
+      //      double pedestal = calib.pedestal(capid);
+      double pedestal = pedestal00->getValue(capid);
       double pedestalw= pedw->getSigma(capid,capid);
 
       if (verbosity == -82 && sub == 4) std::cout << "HF ii = " <<ii<< " massive = " <<ampldefault0<< " adcfC = " <<ampldefault1<< "  ADCcounts= " <<ampldefault2<< " pedestal = " << pedestal <<  " capid = " <<capid<< std::endl;
-
 
       if( usePedestalSubtraction_ ) ampldefault -=  pedestal; // pedestal subtraction
       
@@ -6372,8 +6806,10 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
 	ts_with_max_signal = ii;
       }
       amplitude+=ampldefault;// fC
+      absamplitude+=abs(ampldefault);// fC
       ///////////////////////////////////
 
+      if(flagcpuoptimization_== 0 ) {
 	if(sub == 4 )  h_ADC_HF->Fill(ampldefault, 1.);
       //  
 	if(sub == 4 && mdepth == 1 )  h_ADC_HFdepth1->Fill(ampldefault, 1.);
@@ -6419,10 +6855,10 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
 	if(sub == 4 && mdepth == 2 )  h_ADC_HFdepth2_TS9->Fill(ampldefault, 1.);
       }
   //////      
-      
-      
+	}     
       if (verbosity == -51) std::cout << "fillDigiAmplitudeHF  amplitude = " << amplitude << std::endl;
-      timew += (ii+1)*ampldefault;
+      timew += (ii+1)*abs(ampldefault);
+      timeww += (ii+1)*ampldefault;
     }//for 1
     amplitudechannel[sub-1][mdepth-1][ieta+41][iphi] += amplitude;// 0-82 ; 0-71
 
@@ -6438,10 +6874,10 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
     // ------------ to get signal in TS: -2 max +1  ------------
 
 
-    if(ts_with_max_signal > -1 && ts_with_max_signal < 10) ampl = tool[ts_with_max_signal];
-    if(ts_with_max_signal+2 > -1 && ts_with_max_signal+2 < 10) ampl += tool[ts_with_max_signal+2];
-    if(ts_with_max_signal+1 > -1 && ts_with_max_signal+1 < 10) ampl += tool[ts_with_max_signal+1];
-    if(ts_with_max_signal-1 > -1 && ts_with_max_signal-1 < 10) ampl += tool[ts_with_max_signal-1];
+    if(ts_with_max_signal > -1 && ts_with_max_signal < 4) ampl = tool[ts_with_max_signal];
+    if(ts_with_max_signal+2 > -1 && ts_with_max_signal+2 < 4) ampl += tool[ts_with_max_signal+2];
+    if(ts_with_max_signal+1 > -1 && ts_with_max_signal+1 < 4) ampl += tool[ts_with_max_signal+1];
+    if(ts_with_max_signal-1 > -1 && ts_with_max_signal-1 < 4) ampl += tool[ts_with_max_signal-1];
 
     //  if(ts_with_max_signal+1 > -1 && ts_with_max_signal+1 < 10) ampl += tool[ts_with_max_signal+1];
     //  if(ts_with_max_signal-1 > -1 && ts_with_max_signal-1 < 10) ampl += tool[ts_with_max_signal-1];
@@ -6470,7 +6906,9 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
 
     
     double aveamplitude = 0.;
-    if(amplitude >0 && timew >0)  aveamplitude = timew/amplitude;// average_TS +1
+    double aveamplitudew = 0.;
+    if(absamplitude >0 && timew >0)  aveamplitude = timew/absamplitude;// average_TS +1
+    if(amplitude >0 && timeww >0)  aveamplitudew = timeww/amplitude;// average_TS +1
 
     double rmsamp = 0.;
     // and CapIdErrors:
@@ -6481,7 +6919,7 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
     int lastcapid=0;
     int capid=0;
     for (int ii=0; ii<TSsize; ii++) {  
-      double aaaaaa = (ii+1)-aveamplitude;
+      double aaaaaa = (ii+1)-aveamplitudew;
       double aaaaaa2 = aaaaaa*aaaaaa;
       double ampldefault = tool[ii];
       rmsamp+=(aaaaaa2*ampldefault);// fC
@@ -6509,6 +6947,15 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
 //      if( !anydv) std::cout << "HF 333333333: ii = " << ii  << " capid = " << capid  << std::endl;
 //    }
     // CapIdErrors end  /////////////////////////////////////////////////////////
+    // AZ 1.10.2015:
+    if(error == 1 ) {
+      if(sub == 4 && mdepth == 1 )  h_Amplitude_forCapIdErrors_HF1->Fill(amplitude, 1.);
+      if(sub == 4 && mdepth == 2 )  h_Amplitude_forCapIdErrors_HF2->Fill(amplitude, 1.);
+    }
+    if(error != 1 ) {
+      if(sub == 4 && mdepth == 1 )  h_Amplitude_notCapIdErrors_HF1->Fill(amplitude, 1.);
+      if(sub == 4 && mdepth == 2 )  h_Amplitude_notCapIdErrors_HF2->Fill(amplitude, 1.);
+    }
     
     if ( sub == 4 ) {
       // bad_channels with C,A,W,P,pW,
@@ -6539,7 +6986,14 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
     
 
 
-    ///////////////////////////////////////Digis
+    ///////////////////////////////////////Digis : over all digiHits
+
+    sum0Estimator[sub-1][mdepth-1][ieta+41][iphi] += 1.;
+
+    //      for Error B-type
+    sumEstimator6[sub-1][mdepth-1][ieta+41][iphi] += errorBtype;
+    
+
     //      sumEstimator0[sub-1][mdepth-1][ieta+41][iphi] += pedestalw0;//Sig_Pedestals	
     sumEstimator0[sub-1][mdepth-1][ieta+41][iphi] += pedestal0;//    Pedestals	
     // HF
@@ -6630,11 +7084,15 @@ void VeRawAnalyzer::fillDigiAmplitudeHF(HFDigiCollection::const_iterator& digiIt
 	if(mdepth==2) h_mapDepth2ADCAmpl_HF->Fill(double(ieta), double(iphi), amplitude);
 	if(mdepth==1) h_mapDepth1ADCAmpl12_HF->Fill(double(ieta), double(iphi), ampl);
 	if(mdepth==2) h_mapDepth2ADCAmpl12_HF->Fill(double(ieta), double(iphi), ampl);
-
+	
 	if(amplitude > forallestimators_amplitude_bigger_) sumEstimator1[sub-1][mdepth-1][ieta+41][iphi] += amplitude;
-      }//if(studyADCAmplHist_
+	//		  	  if (verbosity == -7777 && sub==4 && mdepth==1&&ieta==-35&&iphi==35) std::cout << "***ADCAmpl: "  <<" ieta= " << ieta <<" iphi= " << iphi <<" aveamplitude1= " << aveamplitude1 <<" amplitude= " << amplitude << "sumEstimator1[sub-1][mdepth-1][ieta+41][iphi]= "  << sumEstimator1[sub-1][mdepth-1][ieta+41][iphi]  << std::endl;	  	  
+	
+//		if (verbosity == -7777 && sub==4 && mdepth==1) std::cout << "HFdepth1 Amplitude: "  <<" ieta= " << ieta <<" iphi= " << iphi <<" aveamplitude1= " << aveamplitude1 <<" amplitude= " << amplitude << "sumEstimator1[sub-1][mdepth-1][ieta+41][iphi]= "  << sumEstimator1[sub-1][mdepth-1][ieta+41][iphi]  << std::endl;
+	  
+	  }//if(studyADCAmplHist_
       ///////////////////////////////
-
+      
       //   //   //   //   //   //   //   //   //  HF       TSmean:
       if(studyTSmeanShapeHist_) {
 	h_TSmeanA_HF->Fill(aveamplitude1,1.);
@@ -6755,7 +7213,7 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
     const HcalTimeCorr* timecorr = conditions->getHcalTimeCorr(cell);
     const HcalLUTCorr* lutcorr = conditions->getHcalLUTCorr(cell);
     // Energy: 
-    HcalCalibrations calib = conditions->getHcalCalibrations(cell);
+    //    HcalCalibrations calib = conditions->getHcalCalibrations(cell);
     const HcalQIECoder* channelCoder = conditions->getHcalCoder(cell);
     const HcalPedestalWidth* pedw = conditions->getPedestalWidth(cell);
     HcalCoderDb coder (*channelCoder, *shape);
@@ -6776,8 +7234,10 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
     double pedestalw2 = 0.;
     double pedestalw3 = 0.;
     double amplitude = 0.;
+    double absamplitude = 0.;
     double ampl = 0.;
     double timew = 0.;
+    double timeww = 0.;
     double max_signal = -100.;
     int ts_with_max_signal = -100;
     int c0=0;
@@ -6800,7 +7260,8 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
       if( useADCcounts_ ) {ampldefault = ampldefault2;}
 
       int capid = ((*digiItr)[ii]).capid();
-      double pedestal = calib.pedestal(capid);
+      //      double pedestal = calib.pedestal(capid);
+      double pedestal = pedestal00->getValue(capid);
       double pedestalw= pedw->getSigma(capid,capid);
 
       if (verbosity == -83 && sub == 3) std::cout << "HO ii = " <<ii<< " massive = " <<ampldefault0<< " adcfC = " <<ampldefault1<< "  ADCcounts= " <<ampldefault2<< " pedestal = " << pedestal <<  " capid = " <<capid<< std::endl;
@@ -6847,8 +7308,12 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
 	max_signal = ampldefault;
 	ts_with_max_signal = ii;
       }
-      amplitude+=ampldefault;// fC
+      amplitude+=ampldefault;
+      absamplitude+=abs(ampldefault);
+
+
       ///////////////////////////////////////////
+      if(flagcpuoptimization_== 0 ) {
       if(sub == 3 )  h_ADC_HO->Fill(ampldefault, 1.);
       //  
       if(sub == 3 && mdepth == 4 )  h_ADC_HOdepth4->Fill(ampldefault, 1.);
@@ -6884,10 +7349,11 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
 	if(sub == 3 && mdepth == 4 )  h_ADC_HOdepth4_TS9->Fill(ampldefault, 1.);
       }
   //////      
-      
+      }     
       
       if (verbosity == -22) std::cout << "fillDigiAmplitudeHO  amplitude = " << amplitude << std::endl;
-      timew += (ii+1)*ampldefault;
+      timew += (ii+1)*abs(ampldefault);
+      timeww += (ii+1)*ampldefault;
     }//for 1
     amplitudechannel[sub-1][mdepth-1][ieta+41][iphi] += amplitude;// 0-82 ; 0-71
 
@@ -6934,7 +7400,9 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
 
     
     double aveamplitude = 0.;
-    if(amplitude >0 && timew >0)  aveamplitude = timew/amplitude;// average_TS +1
+    double aveamplitudew = 0.;
+    if(absamplitude >0 && timew >0)  aveamplitude = timew/absamplitude;// average_TS +1
+    if(amplitude >0 && timeww >0)  aveamplitudew = timeww/amplitude;// average_TS +1
 
     double rmsamp = 0.;
     // and CapIdErrors:
@@ -6945,7 +7413,7 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
     int lastcapid=0;
     int capid=0;
     for (int ii=0; ii<TSsize; ii++) {  
-      double aaaaaa = (ii+1)-aveamplitude;
+      double aaaaaa = (ii+1)-aveamplitudew;
       double aaaaaa2 = aaaaaa*aaaaaa;
       double ampldefault = tool[ii];
       rmsamp+=(aaaaaa2*ampldefault);// fC
@@ -6973,6 +7441,12 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
 //      if( !anydv) std::cout << "HO 333333333: ii = " << ii  << " capid = " << capid  << std::endl;
 //    }
     // CapIdErrors end  /////////////////////////////////////////////////////////
+    if(error == 1 ) {
+      if(sub == 3 && mdepth == 4 )  h_Amplitude_forCapIdErrors_HO4->Fill(amplitude, 1.);
+    }
+    if(error != 1 ) {
+      if(sub == 3 && mdepth == 4 )  h_Amplitude_notCapIdErrors_HO4->Fill(amplitude, 1.);
+    }
     
     if ( sub == 3 ) {
       // bad_channels with C,A,W,P,pW,
@@ -7004,6 +7478,10 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
     
     
     ///////////////////////////////////////Digis
+
+    sum0Estimator[sub-1][mdepth-1][ieta+41][iphi] += 1.;
+
+
     //      sumEstimator0[sub-1][mdepth-1][ieta+41][iphi] += pedestalw0;//Sig_Pedestals	
     sumEstimator0[sub-1][mdepth-1][ieta+41][iphi] += pedestal0;//Pedestals	
     // HO
@@ -7069,6 +7547,7 @@ void VeRawAnalyzer::fillDigiAmplitudeHO(HODigiCollection::const_iterator& digiIt
       //   //   //   //   //   //   //   //   //  HO       ADCAmpl:
       if(studyADCAmplHist_) {
 	h_ADCAmpl_HO->Fill(amplitude,1.);
+	h_ADCAmpl_HO_copy->Fill(amplitude,1.);
 	if(amplitude < ADCAmplHOMin_  || amplitude > ADCAmplHOMax_) {
 	  if(studyRunDependenceHist_ && flagtodefinebadchannel_==5) ++badchannels[sub-1][mdepth-1][ieta+41][iphi];// 0-82 ; 0-71
 	  if(mdepth==4) h_mapDepth4ADCAmpl225_HO->Fill(double(ieta), double(iphi), 1.);
@@ -7222,17 +7701,728 @@ void VeRawAnalyzer::beginRun( const edm::Run& r, const edm::EventSetup& iSetup)
 
 void VeRawAnalyzer::endRun( const edm::Run& r, const edm::EventSetup& iSetup)
 {
- 
- if (MAPcreation>0) {
+  /////////////////////////////////////////////////////////////////
+  
+  
+  if (verbosity == -7778 ) std::cout << "endRUN: ls0 = " <<ls0 << " lumi = " <<lumi << " run0 = " <<run0 << " nevcounter0 = " <<nevcounter0 << " nevcounter = " <<nevcounter << std::endl;
+  /////////////////////////////// -------------------------------------------------------------------to take into account last LS in Run
+
+  if(usecontinuousnumbering_) { lscounterM1 = lscounter - 1; }
+  else {lscounterM1 = ls0; }
+
+  if(ls0 != -1) h_nevents_per_eachRealLS->Fill( float(lscounterM1) ,float(nevcounter) );//
+  h_nevents_per_LS->Fill(float(nevcounter) );
+  h_nevents_per_LSzoom->Fill(float(nevcounter) );
+  
+  nevcounter0 = nevcounter;
+  if( nevcounter0 != 0 ) {
+    ///////  int sub= cell.subdet();  1-HB, 2-HE, 3-HO, 4-HF
+    ////////////            k0(sub): =0 HB; =1 HE; =2 HO; =3 HF;
+    ////////////         k1(depth-1): = 0 - 3 or depth: = 1 - 4;
+    for(int k0 = 0; k0<4; k0++) {
+      for(int k1 = 0; k1<4; k1++) {
+	for(int k2 = 0; k2<82; k2++) {
+	  for(int k3 = 0; k3<72; k3++) {
+	    //	    if(badchannels[k0][k1][k2][k3] !=0) ++nbadchannels;
+	    int ieta = k2-41;
+	    
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator0
+	    if(sumEstimator0[k0][k1][k2][k3] != 0. ) {
+	      
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator0[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator0[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator0[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumPedestalLS1->Fill(bbbc/bbb1);
+		  h_2DsumPedestalLS1->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumPedestalLS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumPedestalperLS1->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0PedestalperLS1->Fill( float(lscounterM1) ,bbb1);
+		}
+		if(k1+1  ==2) {
+		  h_sumPedestalLS2->Fill(bbbc/bbb1);
+		  h_2DsumPedestalLS2->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumPedestalLS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumPedestalperLS2->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0PedestalperLS2->Fill( float(lscounterM1) ,bbb1);
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumPedestalLS3->Fill(bbbc/bbb1);
+		  h_2DsumPedestalLS3->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumPedestalLS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumPedestalperLS3->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0PedestalperLS3->Fill( float(lscounterM1) ,bbb1);
+		}
+		if(k1+1  ==2) {
+		  h_sumPedestalLS4->Fill(bbbc/bbb1);
+		  h_2DsumPedestalLS4->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumPedestalLS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumPedestalperLS4->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0PedestalperLS4->Fill( float(lscounterM1) ,bbb1);
+		}
+		if(k1+1  ==3) {
+		  h_sumPedestalLS5->Fill(bbbc/bbb1);
+		  h_2DsumPedestalLS5->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumPedestalLS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumPedestalperLS5->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0PedestalperLS5->Fill( float(lscounterM1) ,bbb1);
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumPedestalLS6->Fill(bbbc/bbb1);
+		  h_2DsumPedestalLS6->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumPedestalLS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumPedestalperLS6->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0PedestalperLS6->Fill( float(lscounterM1) ,bbb1);
+		}
+		if(k1+1  ==2) {
+		  h_sumPedestalLS7->Fill(bbbc/bbb1);
+		  h_2DsumPedestalLS7->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumPedestalLS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumPedestalperLS7->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0PedestalperLS7->Fill( float(lscounterM1) ,bbb1);
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumPedestalLS8->Fill(bbbc/bbb1);
+		  h_2DsumPedestalLS8->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumPedestalLS8->Fill(double(ieta), double(k3), bbb1);
+		  h_sumPedestalperLS8->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0PedestalperLS8->Fill( float(lscounterM1) ,bbb1);
+		}
+	      }
+	    }//if(sumEstimator0[k0][k1][k2][k3] != 0.
+	    
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator1
+	    if(sumEstimator1[k0][k1][k2][k3] != 0. ) {
+	      
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator1[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator1[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator1[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumADCAmplLS1copy1->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1copy2->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1copy3->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1copy4->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1copy5->Fill(bbbc/bbb1);
+		  h_sumADCAmplLS1->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HBdepth1_ ) h_2DsumADCAmplLS1->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HBdepth1_ ) h_2DsumADCAmplLS1_LSselected->Fill(double(ieta), double(k3), bbbc);
+//		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_2DsumADCAmplLS1_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS1_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS1->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HBdepth1_ ) h_sumCutADCAmplperLS1->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS1->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumADCAmplLS2->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HBdepth2_  ) h_2DsumADCAmplLS2->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HBdepth2_  ) h_2DsumADCAmplLS2_LSselected->Fill(double(ieta), double(k3), bbbc);
+//		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_2DsumADCAmplLS2_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS2_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS2->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HBdepth2_  ) h_sumCutADCAmplperLS2->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS2->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumADCAmplLS3->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HEdepth1_  ) h_2DsumADCAmplLS3->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HEdepth1_  ) h_2DsumADCAmplLS3_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 146 || lscounterM1 == 515 ) ) h_2DsumADCAmplLS3_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS3_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HEdepth1_  ) h_sumCutADCAmplperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS3->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumADCAmplLS4->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HEdepth2_  ) h_2DsumADCAmplLS4->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HEdepth2_  ) h_2DsumADCAmplLS4_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 146 || lscounterM1 == 515 ) ) h_2DsumADCAmplLS4_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS4_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HEdepth2_  ) h_sumCutADCAmplperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS4->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==3) {
+		  h_sumADCAmplLS5->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HEdepth3_  ) h_2DsumADCAmplLS5->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HEdepth3_  ) h_2DsumADCAmplLS5_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 146 || lscounterM1 == 515 ) ) h_2DsumADCAmplLS5_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS5_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HEdepth3_  ) h_sumCutADCAmplperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS5->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumADCAmplLS6->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HFdepth1_  ) h_2DsumADCAmplLS6->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HFdepth1_  ) h_2DsumADCAmplLS6_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 1810 ) ) h_2DsumADCAmplLS6_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS6_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HFdepth1_  ) h_sumCutADCAmplperLS6->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS6->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumADCAmplLS7->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HFdepth2_  ) h_2DsumADCAmplLS7->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HFdepth2_  ) h_2DsumADCAmplLS7_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 1810 ) ) h_2DsumADCAmplLS7_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		    if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS7_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HFdepth2_  ) h_sumCutADCAmplperLS7->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS7->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumADCAmplLS8->Fill(bbbc/bbb1);
+		  if(bbbc > lsdep_estimator1_HOdepth4_  ) h_2DsumADCAmplLS8->Fill(double(ieta), double(k3), bbbc);
+		  if(bbbc > 2.*lsdep_estimator1_HOdepth4_  ) h_2DsumADCAmplLS8_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		  if( ( lscounterM1 == 14 ) ) h_2DsumADCAmplLS8_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_2DsumADCAmplLS8_LSselected->Fill(double(ieta), double(k3), bbbc);
+		  h_2D0sumADCAmplLS8->Fill(double(ieta), double(k3), bbb1);
+		  h_sumADCAmplperLS8->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc > lsdep_estimator1_HOdepth4_  ) h_sumCutADCAmplperLS8->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0ADCAmplperLS8->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	    }//if(sumEstimator1[k0][k1][k2][k3] != 0.
+
+
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator2
+	    if(sumEstimator2[k0][k1][k2][k3] != 0. ) {
+
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator2[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator2[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator2[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmeanALS1->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator2_HBdepth1_  )h_2DsumTSmeanALS1->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS1->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator2_HBdepth1_  ) h_sumCutTSmeanAperLS1->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS1->Fill( float(lscounterM1) ,bbb1);
+		  if(bbbc> 2.*lsdep_estimator2_HBdepth1_  ) h_sumTSmeanAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+//		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumTSmeanAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumTSmeanAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmeanALS2->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HBdepth2_  )h_2DsumTSmeanALS2->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS2->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HBdepth2_  ) h_sumCutTSmeanAperLS2->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS2->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmeanALS3->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HEdepth1_  )h_2DsumTSmeanALS3->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HEdepth1_  ) h_sumCutTSmeanAperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS3->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmeanALS4->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HEdepth2_  )h_2DsumTSmeanALS4->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HEdepth2_  ) h_sumCutTSmeanAperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS4->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==3) {
+		  h_sumTSmeanALS5->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HEdepth3_  )h_2DsumTSmeanALS5->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HEdepth3_  ) h_sumCutTSmeanAperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS5->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmeanALS6->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HFdepth1_  )h_2DsumTSmeanALS6->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HFdepth1_  ) h_sumCutTSmeanAperLS6->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS6->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmeanALS7->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HFdepth2_  )h_2DsumTSmeanALS7->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HFdepth2_  ) h_sumCutTSmeanAperLS7->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS7->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumTSmeanALS8->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator2_HOdepth4_  )h_2DsumTSmeanALS8->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmeanALS8->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmeanAperLS8->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator2_HOdepth4_  ) h_sumCutTSmeanAperLS8->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmeanAperLS8->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	    }//if(sumEstimator2[k0][k1][k2][k3] != 0.
+
+
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator3
+	    if(sumEstimator3[k0][k1][k2][k3] != 0. ) {
+
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator3[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator3[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator3[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmaxALS1->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator3_HBdepth1_  )h_2DsumTSmaxALS1->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS1->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator3_HBdepth1_  ) h_sumCutTSmaxAperLS1->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS1->Fill( float(lscounterM1) ,bbb1);
+		  if(bbbc> 2.*lsdep_estimator3_HBdepth1_  ) h_sumTSmaxAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+//		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumTSmaxAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumTSmaxAperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmaxALS2->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HBdepth2_  )h_2DsumTSmaxALS2->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS2->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HBdepth2_  ) h_sumCutTSmaxAperLS2->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS2->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmaxALS3->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HEdepth1_  )h_2DsumTSmaxALS3->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HEdepth1_  ) h_sumCutTSmaxAperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS3->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmaxALS4->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HEdepth2_  )h_2DsumTSmaxALS4->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HEdepth2_  ) h_sumCutTSmaxAperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS4->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==3) {
+		  h_sumTSmaxALS5->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HEdepth3_  )h_2DsumTSmaxALS5->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HEdepth3_  ) h_sumCutTSmaxAperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS5->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumTSmaxALS6->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HFdepth1_  )h_2DsumTSmaxALS6->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HFdepth1_  ) h_sumCutTSmaxAperLS6->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS6->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumTSmaxALS7->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HFdepth2_  )h_2DsumTSmaxALS7->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HFdepth2_  ) h_sumCutTSmaxAperLS7->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS7->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumTSmaxALS8->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator3_HOdepth4_  )h_2DsumTSmaxALS8->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumTSmaxALS8->Fill(double(ieta), double(k3), bbb1);
+		  h_sumTSmaxAperLS8->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator3_HOdepth4_  ) h_sumCutTSmaxAperLS8->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0TSmaxAperLS8->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	    }//if(sumEstimator3[k0][k1][k2][k3] != 0.
+
+
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator4
+	    if(sumEstimator4[k0][k1][k2][k3] != 0. ) {
+
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator4[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator4[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator4[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplitudeLS1->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HBdepth1_  )h_2DsumAmplitudeLS1->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS1->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HBdepth1_  ) h_sumCutAmplitudeperLS1->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS1->Fill( float(lscounterM1) ,bbb1);
+		  if(bbbc> 2.*lsdep_estimator4_HBdepth1_  ) h_sumAmplitudeperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumAmplitudeperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+				  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumAmplitudeperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplitudeLS2->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HBdepth2_  )h_2DsumAmplitudeLS2->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS2->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HBdepth2_  ) h_sumCutAmplitudeperLS2->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS2->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplitudeLS3->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HEdepth1_  )h_2DsumAmplitudeLS3->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HEdepth1_  ) h_sumCutAmplitudeperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS3->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplitudeLS4->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HEdepth2_  )h_2DsumAmplitudeLS4->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HEdepth2_  ) h_sumCutAmplitudeperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS4->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==3) {
+		  h_sumAmplitudeLS5->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HEdepth3_  )h_2DsumAmplitudeLS5->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HEdepth3_  ) h_sumCutAmplitudeperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS5->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplitudeLS6->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HFdepth1_   )h_2DsumAmplitudeLS6->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HFdepth1_   ) h_sumCutAmplitudeperLS6->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS6->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplitudeLS7->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HFdepth2_   )h_2DsumAmplitudeLS7->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HFdepth2_   ) h_sumCutAmplitudeperLS7->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS7->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumAmplitudeLS8->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator4_HOdepth4_   )h_2DsumAmplitudeLS8->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplitudeLS8->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplitudeperLS8->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator4_HOdepth4_   ) h_sumCutAmplitudeperLS8->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplitudeperLS8->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	    }//if(sumEstimator4[k0][k1][k2][k3] != 0.
+
+
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator5
+	    if(sumEstimator5[k0][k1][k2][k3] != 0. ) {
+
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator5[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator5[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator5[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HB:
+	      if(k0==0) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplLS1->Fill(bbbc/bbb1);
+		  if(bbbc>lsdep_estimator5_HBdepth1_  )h_2DsumAmplLS1->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS1->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS1->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc> lsdep_estimator5_HBdepth1_  ) h_sumCutAmplperLS1->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS1->Fill( float(lscounterM1) ,bbb1);
+		  if(bbbc> 2.*lsdep_estimator5_HBdepth1_  ) h_sumAmplperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 734 || lscounterM1 == 758 || lscounterM1 == 759 || lscounterM1 == 853 || lscounterM1 == 1436 ) ) h_sumAmplperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+		  //		  if( ( lscounterM1 == 504 || lscounterM1 == 867 ) ) h_sumAmplperLS1_LSselected->Fill( float(lscounterM1) ,bbbc); 
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplLS2->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HBdepth2_  )h_2DsumAmplLS2->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS2->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS2->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HBdepth2_  ) h_sumCutAmplperLS2->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS2->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HE:
+	      if(k0==1) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplLS3->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HEdepth1_  )h_2DsumAmplLS3->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS3->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS3->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HEdepth1_  ) h_sumCutAmplperLS3->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS3->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplLS4->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HEdepth2_  )h_2DsumAmplLS4->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS4->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS4->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HEdepth2_  ) h_sumCutAmplperLS4->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS4->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==3) {
+		  h_sumAmplLS5->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HEdepth3_  )h_2DsumAmplLS5->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS5->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS5->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HEdepth3_  ) h_sumCutAmplperLS5->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS5->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumAmplLS6->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HFdepth1_  )h_2DsumAmplLS6->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS6->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS6->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HFdepth1_  ) h_sumCutAmplperLS6->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS6->Fill( float(lscounterM1) ,bbb1);
+
+		}
+		if(k1+1  ==2) {
+		  h_sumAmplLS7->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HFdepth2_  )h_2DsumAmplLS7->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS7->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS7->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HFdepth2_  ) h_sumCutAmplperLS7->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS7->Fill( float(lscounterM1) ,bbb1);
+
+		}
+	      }
+	      // HO:
+	      if(k0==2) {
+		// HBdepth1
+		if(k1+1  ==4) {
+		  h_sumAmplLS8->Fill(bbbc/bbb1);
+		  if(bbbc<lsdep_estimator5_HOdepth4_  )h_2DsumAmplLS8->Fill(double(ieta),double(k3),bbbc);
+		  h_2D0sumAmplLS8->Fill(double(ieta), double(k3), bbb1);
+		  h_sumAmplperLS8->Fill( float(lscounterM1) ,bbbc);
+		  if(bbbc< lsdep_estimator5_HOdepth4_  ) h_sumCutAmplperLS8->Fill( float(lscounterM1) ,bbbc); 
+		  h_sum0AmplperLS8->Fill( float(lscounterM1) ,bbb1);
+		  
+		}
+	      }
+	    }//if(sumEstimator5[k0][k1][k2][k3] != 0.
+	    
+	    
+	    // ------------------------------------------------------------------------------------------------------------------------sumEstimator6
+	    if (verbosity == -81 ) std::cout << "sumEstimator6 = " <<sumEstimator6[k0][k1][k2][k3]<< std::endl;
+	    if(sumEstimator6[k0][k1][k2][k3] != 0. ) {
+	      
+	      // fill histoes:
+	      double bbbc=0.;
+	      if(flagestimatornormalization_ == 0 ) bbbc = sumEstimator6[k0][k1][k2][k3]/nevcounter0;
+	      if(flagestimatornormalization_ == 1 ) bbbc = sumEstimator6[k0][k1][k2][k3]/sum0Estimator[k0][k1][k2][k3];
+	      double bbb1=1.;
+	      if(flagestimatornormalization_ == 2 ) {bbbc = sumEstimator6[k0][k1][k2][k3]; bbb1 = sum0Estimator[k0][k1][k2][k3];}
+	      
+	      // HF:
+	      if(k0==3) {
+		// HBdepth1
+		if(k1+1  ==1) {
+		  h_sumErrorBLS6->Fill(bbbc/bbb1);
+		  h_2D0sumErrorBLS6->Fill(double(ieta), double(k3), bbb1);
+		  h_2DsumErrorBLS6->Fill(double(ieta), double(k3), bbbc);
+
+		  h_sumErrorBperLS6->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0ErrorBperLS6->Fill( float(lscounterM1) ,bbb1);
+		  
+		}
+		if(k1+1  ==2) {
+		  h_sumErrorBLS7->Fill(bbbc/bbb1);
+		  h_2D0sumErrorBLS7->Fill(double(ieta), double(k3), bbb1);
+		  h_2DsumErrorBLS7->Fill(double(ieta), double(k3), bbbc);
+
+		  h_sumErrorBperLS7->Fill( float(lscounterM1) ,bbbc);
+		  h_sum0ErrorBperLS7->Fill( float(lscounterM1) ,bbb1);
+
+
+		}
+	      }
+
+	    }//if(sumEstimator6[k0][k1][k2][k3] != 0.
+
+	    
+	  }//for  
+	}//for  
+      }//for  
+    }//for 
+
+
+  }//if( nevcounter0 != 0 )    
+  /////////////////////////////// -------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+  if (MAPcreation>0) {
     std::cout << "===== Start writing Channel MAP =====" << std::endl;    
     MAPfile.open(MAPOutputFileName);
-
+    
     edm::ESHandle<HcalTopology> topo;
     iSetup.get<IdealGeometryRecord>().get(topo);
-
+    
     HcalLogicalMapGenerator gen;
     HcalLogicalMap lmap=gen.createMap(&(*topo)); 
-  
+    
     HcalElectronicsMap emap=lmap.generateHcalElectronicsMap();
     std::string subdet =""; 
                      
@@ -7754,6 +8944,7 @@ void VeRawAnalyzer::endJob(){
 
     ///////////////////////
     h_ADCAmpl_HO->Write();
+    h_ADCAmpl_HO_copy->Write();
     h_mapDepth4ADCAmpl225_HO->Write();
     h_mapDepth4ADCAmpl_HO->Write();
     h_mapDepth4ADCAmpl12_HO->Write();
@@ -8088,6 +9279,18 @@ void VeRawAnalyzer::endJob(){
     h_sumCutADCAmplperLS6->Write();
     h_2D0sumADCAmplLS6->Write();
     h_sum0ADCAmplperLS6->Write();
+
+
+    h_sumADCAmplperLS6_P1 ->Write();
+    h_sum0ADCAmplperLS6_P1 ->Write(); 
+    h_sumADCAmplperLS6_P2  ->Write(); 
+    h_sum0ADCAmplperLS6_P2 ->Write(); 
+    h_sumADCAmplperLS6_M1  ->Write(); 
+    h_sum0ADCAmplperLS6_M1  ->Write();
+    h_sumADCAmplperLS6_M2   ->Write();
+    h_sum0ADCAmplperLS6_M2  ->Write();
+
+
     
     h_sumADCAmplLS7->Write();
     h_2DsumADCAmplLS7->Write();
@@ -8279,6 +9482,20 @@ void VeRawAnalyzer::endJob(){
     h_2D0sumAmplitudeLS8->Write();
     h_sum0AmplitudeperLS8->Write();
     
+
+    // for estimator6:
+    h_sumErrorBLS6->Write();
+    h_sumErrorBperLS6->Write();
+    h_sum0ErrorBperLS6->Write();
+    h_2D0sumErrorBLS6->Write();
+    h_2DsumErrorBLS6->Write();
+    h_sumErrorBLS7->Write();
+    h_sumErrorBperLS7->Write();
+    h_sum0ErrorBperLS7->Write();
+    h_2D0sumErrorBLS7->Write();
+    h_2DsumErrorBLS7->Write();
+
+
     // for estimator5:
     h_sumAmplLS1->Write();
     h_2DsumAmplLS1->Write();
@@ -8322,6 +9539,10 @@ void VeRawAnalyzer::endJob(){
     h_sumCutAmplperLS6->Write();
     h_2D0sumAmplLS6->Write();
     h_sum0AmplperLS6->Write();
+
+    h_RatioOccupancy_HFP->Write();
+    h_RatioOccupancy_HFM->Write();
+
     
     h_sumAmplLS7->Write();
     h_2DsumAmplLS7->Write();
@@ -8720,6 +9941,26 @@ void VeRawAnalyzer::endJob(){
     h_bcnbadrate0_depth4_HO->Write();
     h_bcnbadrate0_depth1_HF->Write();
     h_bcnbadrate0_depth2_HF->Write();
+
+
+    h_Amplitude_forCapIdErrors_HB1->Write();
+    h_Amplitude_forCapIdErrors_HB2->Write();
+    h_Amplitude_forCapIdErrors_HE1->Write();
+    h_Amplitude_forCapIdErrors_HE2->Write();
+    h_Amplitude_forCapIdErrors_HE3->Write();
+    h_Amplitude_forCapIdErrors_HF1->Write();
+    h_Amplitude_forCapIdErrors_HF2->Write();
+    h_Amplitude_forCapIdErrors_HO4->Write();
+
+    h_Amplitude_notCapIdErrors_HB1->Write();
+    h_Amplitude_notCapIdErrors_HB2->Write();
+    h_Amplitude_notCapIdErrors_HE1->Write();
+    h_Amplitude_notCapIdErrors_HE2->Write();
+    h_Amplitude_notCapIdErrors_HE3->Write();
+    h_Amplitude_notCapIdErrors_HF1->Write();
+    h_Amplitude_notCapIdErrors_HF2->Write();
+    h_Amplitude_notCapIdErrors_HO4->Write();
+
 
 
     ///////////////////////
