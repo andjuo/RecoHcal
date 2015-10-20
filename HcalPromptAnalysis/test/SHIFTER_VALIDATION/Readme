@@ -15,6 +15,16 @@
       ERT1->SetLineColor(0);
       ERT1->Draw("Error");
 ... -> do similar for h_sumADCAmplperLS6_P2,h_sumADCAmplperLS6_M1, M2...
+  KEY: TH1F	h_sum0ADCAmplperLS6;1
+  KEY: TH1F	h_sumADCAmplperLS6_P1;1
+  KEY: TH1F	h_sum0ADCAmplperLS6_P1;1
+  KEY: TH1F	h_sumADCAmplperLS6_P2;1
+  KEY: TH1F	h_sum0ADCAmplperLS6_P2;1
+  KEY: TH1F	h_sumADCAmplperLS6_M1;1
+  KEY: TH1F	h_sum0ADCAmplperLS6_M1;1
+  KEY: TH1F	h_sumADCAmplperLS6_M2;1
+  KEY: TH1F	h_sum0ADCAmplperLS6_M2;1
+
 
 (use different colors)
       }
