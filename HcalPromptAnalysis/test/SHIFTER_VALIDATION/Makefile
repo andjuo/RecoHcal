@@ -15,3 +15,6 @@ RemoteMonitoringGLOBAL.cc.exe: RemoteMonitoringGLOBAL.cc $(DEPS)
 
 RemoteMonitoringMAP_Global.cc.exe: RemoteMonitoringMAP_Global.cc $(DEPS)
 	c++ $< ${ROOTINC} ${CFLAGS} -o $@ ${ROOTLIBS}
+
+clean:
+	rm -f *.cc.exe
