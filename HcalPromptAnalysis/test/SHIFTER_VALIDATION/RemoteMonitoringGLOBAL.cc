@@ -21,8 +21,12 @@
 #include "TLine.h"
 #include "TGraph.h"
 #include <THStack.h>
+#include <TPaveText.h>
 
 using namespace std;
+//inline void HERE(const char *msg) { std::cout << msg << std::endl; }
+
+// -----------------------------------------------------
 
 int main(int argc, char *argv[])
 {
@@ -1189,7 +1193,7 @@ int main(int argc, char *argv[])
   flagErrAB_HF[1]=-1;
   {
     const int specCountA=4;
-    const int specColors[specCountA] = { 2, 3, 4, 7 };
+    const int specColors[specCountA] = { 1, 2, 3, 4 };
     const TString hnames[specCountA][2] =
       { { "h_sumADCAmplperLS6_P1", "h_sum0ADCAmplperLS6_P1" },
 	{ "h_sumADCAmplperLS6_P2", "h_sum0ADCAmplperLS6_P2" },
@@ -1197,8 +1201,9 @@ int main(int argc, char *argv[])
 	{ "h_sumADCAmplperLS6_M2", "h_sum0ADCAmplperLS6_M2" } };
 
     std::vector<TH1F*> hV;
-    THStack *hs= new THStack("hs","");
+    THStack *hs= new THStack("hs","ADCAmplerLS6");
     cONE->Clear();
+    cONE->cd();
 
     for (int i=0; i<specCountA; i++) {
       if (1) std::cout << "errA_HF test: get histos for i=" << i
@@ -1207,11 +1212,21 @@ int main(int argc, char *argv[])
       TH1F *h1= (TH1F*)hfile->Get(hnames[i][0]);
       TH1F *h0= (TH1F*)hfile->Get(hnames[i][1]);
       if (!h1 || !h0) {
-	std::cout << "histograms " << hnames[i][0] << " or " << hnames[i][1]
-		  << " are not available\n";
+	TPaveText *ptext= new TPaveText(0.05,0.85,0.95,0.95);
+	ptext->AddText("Missing histo");
+	if (!h1) {
+	  std::cout << "\tfailed to get " << hnames[i][0] << "\n";
+	  ptext->AddText(hnames[i][0]);
+	}
+	if (!h0) {
+	  std::cout << "\tfailed to get " << hnames[i][1] << "\n";
+	  ptext->AddText(hnames[i][1]);
+	}
+	ptext->Draw();
 	continue;
       }
       TH1F *hERT1= (TH1F*)h1->Clone(Form("ERT1_%d",i));
+      hERT1->GetXaxis()->SetTitle("<ADCAmpl> per LS HF: black-P1, red-P2,green-M1,blue-M2");
       hV.push_back(hERT1);
       hERT1->Divide(h1, h0, 1,1, "B");
       hERT1->SetMarkerStyle(20);
@@ -1224,7 +1239,9 @@ int main(int argc, char *argv[])
       delete h0;
     }
 
-    cONE->cd();
+    hs->Draw("LPE1 nostack"); cONE->Update(); // activate the axes
+    hs->GetXaxis()->SetTitle("<ADCAmpl> per LS HF: black-P1, red-P2,green-M1,blue-M2");
+    //hs->GetYaxis()->SetTitle("<ADCAmpl>");
     hs->Draw("LPE1 nostack");
     gPad->SetGridx();
     gPad->SetGridy();
@@ -1259,29 +1276,42 @@ int main(int argc, char *argv[])
 	{ "h_2DsumErrorBLS7", "h_2D0sumErrorBLS7" },
 	{ "h_sumErrorBperLS7", "h_sum0ErrorBperLS7" } };
 
-    cHE->Clear();
-    cHE->Divide(2,1);
-
     for (int depth=1; depth<=2; depth++) {
+
+      cHB->Clear();
+      cHB->Divide(2,1);
+      cHB->cd(1);
+
       TH1F *hRate2= NULL;
       TH2F *h2Cefz6= NULL;
-      TH2F *twod1= (TH2F*)hfile->Get(hnames[2*depth-2][0]);
-      TH2F *twod0= (TH2F*)hfile->Get(hnames[2*depth-2][1]);
+      TString hname1= hnames[2*depth-2][0];
+      TString hname0= hnames[2*depth-2][1];
+      TH2F *twod1= (TH2F*)hfile->Get(hname1);
+      TH2F *twod0= (TH2F*)hfile->Get(hname0);
       if (1) std::cout << "errB_HF depth=" << depth << ". get 2D histos "
-		       << hnames[2*depth-2][0] << " and "
-		       << hnames[2*depth-2][1] << "\n";
+		       << hname1 << " and " << hname0 << "\n";
       if (!twod1 || !twod0) {
-	std::cout << "failed to get either " << hnames[2*depth-2][0]
-		  << " or " << hnames[2*depth-2][1] << "\n";
+	TPaveText *ptext= new TPaveText(0.05,0.85,0.95,0.95);
+	ptext->AddText("Missing histos");
+	if (!twod1) {
+	  std::cout << "\tfailed to get " << hname1 << "\n";
+	  ptext->AddText(hname1);
+	}
+	if (!twod0) {
+	  std::cout << "\tfailed to get " << hname0 << "\n";
+	  ptext->AddText(hname0);
+	}
+	ptext->Draw();
       }
       else {
 	h2Cefz6= (TH2F*)twod1->Clone("Cefz6");
+	h2Cefz6->SetTitle(Form("HF Depth %d \b",depth));
 	h2Cefz6->Divide(twod1,twod0, 1, 1, "B");
 
-	cHE->cd(1);
 	gPad->SetGridy();
 	gPad->SetGridx();
 	gPad->SetLogz();
+	h2Cefz6->SetTitle(Form("Depth %d \b",depth));
 	h2Cefz6->SetMarkerStyle(20);
 	h2Cefz6->SetMarkerSize(0.4);
 	h2Cefz6->GetZaxis()->SetLabelSize(0.08);
@@ -1294,23 +1324,33 @@ int main(int argc, char *argv[])
 
 	delete twod1;
 	delete twod0;
-      }
+      } // histos ok
 
-      TH1F *h1= (TH1F*)hfile->Get(hnames[2*depth-1][0]);
-      TH1F *h0= (TH1F*)hfile->Get(hnames[2*depth-1][1]);
+      cHB->cd(2);
+      hname1=hnames[2*depth-1][0];
+      hname0=hnames[2*depth-1][1];
+      TH1F *h1= (TH1F*)hfile->Get(hname1);
+      TH1F *h0= (TH1F*)hfile->Get(hname0);
       if (1) std::cout << "errB_HF depth=" << depth << ". get 2D histos "
-		       << hnames[2*depth-1][0] << " and "
-		       << hnames[2*depth-1][1] << "\n";
+		       << hname1 << " and " << hname0 << "\n";
       if (!h1 || !h0) {
-	std::cout << "could not get errB_HF histos: either "
-		  << hnames[2*depth-1][0] << " or "
-		  << hnames[2*depth-1][1] << "\n";
+	TPaveText *ptext= new TPaveText(0.05,0.85,0.95,0.95);
+	ptext->AddText("Missing histo");
+	if (!h1) {
+	  std::cout << "\tfailed to get " << hname1 << "\n";
+	  ptext->AddText(hname1);
+	}
+	if (!h0) {
+	  std::cout << "\tfailed to get " << hname0 << "\n";
+	  ptext->AddText(hname0);
+	}
+	ptext->Draw();
       }
       else {
-	cHE->cd(2);
 	gPad->SetGridy();
 	gPad->SetLogy();
 	hRate2 = (TH1F*)h1->Clone("Rate2");
+	hRate2->SetTitle(Form("Depth %d \b",depth));
 	hRate2->Divide(h1,h0, 1, 1, "B");
 	hRate2->SetMarkerStyle(20);
 	hRate2->SetMarkerSize(0.8);
@@ -1323,9 +1363,9 @@ int main(int argc, char *argv[])
 	delete h0;
       }
 
-      cHE->Update();
-      cHE->Print(Form("HistErrB_HF_%d.png",depth));
-      cHE->Clear();
+      cHB->Update();
+      cHB->Print(Form("HistErrB_HF_%d.png",depth));
+      cHB->Clear();
       if (h2Cefz6) delete h2Cefz6;
       if (hRate2) delete hRate2;
     }
@@ -1607,7 +1647,7 @@ int main(int argc, char *argv[])
 		flagSpecHF+=1;
 		htmlFile << "<h2> 4. Error type A & B</h2>\n";
 		htmlFile << "<h2> 4a. Error type A</h2>\n";
-		htmlFile << "<h3>Max difference between the dependencies should be &gt;2 (early plots only for confirmation).</h3>/n";
+		htmlFile << "<h3>Max difference between the dependencies should be &gt;2 (early plots only for confirmation).</h3>\n";
 		htmlFile << " <img src=\"HistErrA_HF.png\" />\n";
 		htmlFile << "<br>\n";
 		htmlFile << "<h2> 4b. Error type B\n";
