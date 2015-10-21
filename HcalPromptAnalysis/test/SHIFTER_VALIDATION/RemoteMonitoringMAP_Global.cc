@@ -21,6 +21,7 @@
 #include "TFile.h"
 #include "TLine.h"
 #include "TGraph.h"
+#include <TPaveText.h>
 
 using namespace std;
 
@@ -1473,6 +1474,7 @@ int main(int argc, char *argv[])
 
     cHE->Clear();
     cHE->Divide(3,1);
+    cHE->cd(1);
 
     // h_mapDepth1ADCAmpl_HF div h_mapDepth1_HF
     TString hname1= Form("h_mapDepth%dADCAmpl_HF",depth);
@@ -1480,15 +1482,20 @@ int main(int argc, char *argv[])
     TH2F *twod1= (TH2F*)hfile->Get(hname1);
     TH2F *twod0= (TH2F*)hfile->Get(hname0);
     if (!twod1 || !twod0) {
+      TPaveText *ptext= new TPaveText(0.05,0.85,0.95,0.95);
+      ptext->AddText("Missing histo");
       std::cout << "specHF test: failed to load " << hname1 << " and/or "
 		<< hname0 << "\n";
+      if (!twod1) ptext->AddText(hname1);
+      if (!twod0) ptext->AddText(hname0);
+      ptext->Draw();
+      continue;
     }
     else {
       h2Ceff = (TH2F*)twod1->Clone(Form("Ceff_HF%d",depth));
       h2Ceff->SetTitle(Form("HF Depth %d. (No cut) \b",depth));
       h2Ceff->Divide(twod1,twod0, 1, 1, "B");
 
-      cHE->cd(1);
       gPad->SetGridy();
       gPad->SetGridx();
       gPad->SetLogz();
@@ -1505,7 +1512,7 @@ int main(int argc, char *argv[])
 
     cHE->cd(2);
     ///////////////////////////////////////
-    if (h2Ceff) {
+    if (!h2Ceff) {
       // TO IDENTIFY: see red bins in eta-phi space (applied cut on Aij: <20 || >3000
       h2Diffe = (TH2F*)h2Ceff->Clone(Form("Diffe_Depth%d_HF",depth));
       h2Diffe->SetTitle(Form("HF Depth %d. Cut avg(ADCAmpl) > 20 \b",depth));
@@ -1567,9 +1574,12 @@ int main(int argc, char *argv[])
 
 //======================================================================
 /// Special tests for HF
-// For occupancy plots. Produces OccPlots_HFx.png
-/*
-  for (int depth=1; depth<=2; depth++) {
+// For occupancy plots. Produces OccPlots_HFx.png (x=1)
+
+  std::vector<TString> specOccMessages;
+
+  // only 1 depth!!!
+  for (int depth=1; depth<=1; depth++) {
     TH2F *h2Ceff= NULL;
     TH2F *h2Diffe= NULL;
     TH1F* h1diffADCAmpl= NULL;
@@ -1582,18 +1592,116 @@ int main(int argc, char *argv[])
     TString hname0= Form("h_mapDepth%d_HF",depth);
     TH2F *twod1= (TH2F*)hfile->Get(hname1);
     TH2F *twod0= (TH2F*)hfile->Get(hname0);
+    std::vector<TH1F*> hV;
     if (!twod1 || !twod0) {
-      std::cout << "failed to get " << hname0 << " or "
-		<< hname1 << "\n";
+      cPED->cd(1);
+      TPaveText *ptext= new TPaveText(0.05,0.85,0.95,0.95);
+      ptext->AddText("Missing histo");
+      std::cout << "specHF test (occ): failed to load " << hname1 << " and/or "
+		<< hname0 << "\n";
+      if (!twod1) ptext->AddText(hname1);
+      if (!twod0) ptext->AddText(hname0);
+      ptext->Draw();
       continue;
     }
-    int nx= twod0->GetNbinsX();
-    int ny= twod1->GetNbinsY();
+    else {
+      TH2F *h2Cefz= (TH2F*)twod1->Clone(Form("h2Cefz_%d",depth));
+      int nx= h2Cefz->GetNbinsX();
+      int ny= h2Cefz->GetNbinsY();
 
-    TH1F* ADCAmplperLS  = new TH1F("ADCAmplperLS ","", 72, 1.,73.);
-    TH1F* ADCAmplperLS2  = new TH1F("ADCAmplperLS2 ","", 72, 1.,73.);
-  }
-*/
+      const int specCount=4;
+      const TString specHNames[specCount] = { "h_mapDepth1_HF",
+					      "h_mapDepth1_HF",
+					      "h_RatioOccupancy_HFM",
+					      "h_RatioOccupancy_HFP" };
+      const TString specCaseNames[specCount] = { "HF-", "HF+", "RatioOcc_HFM", "RatioOcc_HFP" };
+
+      for (int iSpec=0; iSpec<=specCount; iSpec++) {
+	cPED->cd(iSpec+1);
+
+	TString hName=specHNames[iSpec];
+	TH2F *h2Cefz225= (TH2F*)hfile->Get(hName);
+	if (!h2Cefz225) {
+	  TPaveText *ptext= new TPaveText(0.05,0.85,0.95,0.95);
+	  ptext->AddText("Missing histo");
+	  std::cout << "specHF test (occ): failed to load " << hName << "\n";
+	  ptext->AddText(hName);
+	  ptext->Draw();
+	  continue;
+	}
+
+	TH1F* ADCAmplperLS  = new TH1F(Form("ADCAmplperLS_%d",iSpec),"",72, 1.,73.);
+	ADCAmplperLS->SetDirectory(0);
+	hV.push_back(ADCAmplperLS);
+
+	int ncountall=0;
+	int ncountmin=0;
+	int nnnmin=100000000;
+	int nnnbins=0;
+	for (int j=1;j<=ny;j++) {
+	  //	cout<<" " << specCaseNames[iSpec] << "  ****************   j = "<<   j    <<endl;
+	  for (int i=1;i<=nx;i++) {
+	    if ((iSpec==0) && (i>=42)) continue; // HF-
+	    if ((iSpec==1) && (i< 42)) continue; // HF+
+	    //	    if(h2Cefz->GetBinContent(i,j) > 0.) cout<<" i = "<<i<<" j = "<<j<<"  BinContent= "<<    h2Cefz->GetBinContent(i,j)    <<endl;
+
+	    // no cuts - take all
+	    //	    	    if(h2Cefz->GetBinContent(i,j)> -10.) {
+	    // cut on RMS:
+	    //	    if(h2Cefz->GetBinContent(i,j)> 1.) {
+	    // cut on Amplitude
+	    if(h2Cefz->GetBinContent(i,j)> 20.) {
+	      double ccc1 =  h2Cefz225->GetBinContent(i,j);
+	      if(ccc1>0.) {
+		ADCAmplperLS ->Fill(float(j), ccc1);
+		ncountall += ccc1 ;
+		ncountmin += ccc1;
+	      }
+	    }
+	  }
+	}
+	if(ncountmin> 0) {
+	  //	  cout<< specCaseNames[iSpec] << "     - ncountmin = "<<   ncountmin    <<" ncountall  = "<<   ncountall    <<endl;
+	  if(ncountmin < nnnmin ) nnnmin = ncountmin;
+	  ncountmin=0;
+	  nnnbins++;
+	}
+	//      cout<<" " << specCaseNames[iSpec] << "    - ncountall = "<<   ncountall    <<" nnnmin= "<<   nnnmin    <<" nnnbins= "<<   nnnbins    <<" Ave= "<<   ncountall/nnnbins    <<endl;
+	TString msg= specCaseNames[iSpec];
+	if(nnnmin > 0.) {
+	  cout<< " " << specCaseNames[iSpec] << "    - ncountall/nnnbins/nnnmin = "<<   (float)ncountall/nnnbins/nnnmin    <<endl;
+	  msg.Append(Form("    - ncountall/nnnbins/nnnmin = %f",(float)ncountall/nnnbins/nnnmin ));
+	}
+	else msg.Append(" no warning");
+	specOccMessages.push_back(msg);
+
+	//      gPad->SetLogy();
+	ADCAmplperLS ->SetMarkerStyle(20);
+	ADCAmplperLS ->SetMarkerSize(0.4);
+	ADCAmplperLS ->GetYaxis()->SetLabelSize(0.04);
+	//      ADCAmplperLS ->SetXTitle("<ADCAmpl> per LS HB1 \b");
+	ADCAmplperLS ->SetMarkerColor(2);
+	ADCAmplperLS ->SetLineColor(4);
+	//      ADCAmplperLS ->SetMaximum(30.0);
+	//      ADCAmplperLS ->SetMinimum(25.0);
+	ADCAmplperLS->SetXTitle(Form(" #hits vs Phi for  %s  cut:A>20\\b",specCaseNames[iSpec].Data()));
+	ADCAmplperLS ->Draw();
+      } // iSpec
+    }  // twod0 and twod1 are ok
+
+    cPED->Update();
+    cPED->Print(Form("OccPlots_HF%d.png",depth));
+    cPED->Clear();
+
+    // clean-up
+    if (twod1) delete twod1;
+    if (twod0) delete twod0;
+    for (unsigned int i=0; i<hV.size(); i++) {
+      delete hV[i];
+    }
+  } // dummy loop on depth
+
+
 
 //======================================================================
 /// Prepare maps of good/bad channels:
@@ -2727,14 +2835,19 @@ int main(int argc, char *argv[])
      if (sub==4) {
        htmlFile << "<a name=\"ErrorA\"></a>\n";
        htmlFile << "<h2> 2D. Cross check for error A</h2>\n";
-       htmlFile << " <img src=\"ChkErrA_HF1.png\" /><br>\n";
+       htmlFile << " <img src=\"ChkErrA_HF1.png\" /><br><br>\n";
        htmlFile << " <img src=\"ChkErrA_HF2.png\" /><br>\n";
        htmlFile << "<a href=\"#Top\">to top</a><br>\n";
 
        htmlFile << "<a name=\"Occupancy\"></a>\n";
        htmlFile << "<h2> 2E. Occupancy plots</h2>\n";
-       htmlFile << " <img src=\"OccPlots_HF1.png\" /><br>\n";
-       htmlFile << " <img src=\"OccPlots_HF2.png\" /><br>\n";
+       htmlFile << "TO IDENTIFY: see deep gaps( not one bin)<br>\n";
+       htmlFile << " <img src=\"OccPlots_HF1.png\" /><br><br>\n";
+       //htmlFile << " <img src=\"OccPlots_HF2.png\" /><br>\n";
+       for (unsigned int i=0; i<specOccMessages.size(); i++) {
+	 htmlFile << specOccMessages[i] << "<br>\n";
+       }
+       htmlFile << "<br>\n";
        htmlFile << "<a href=\"#Top\">to top</a><br>\n";
      }
 

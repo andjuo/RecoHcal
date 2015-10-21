@@ -25,6 +25,9 @@
 
 using namespace std;
 //inline void HERE(const char *msg) { std::cout << msg << std::endl; }
+int copyContents(TH1F **hDest, TString hname, TString htitle,
+		 const TH1F *hSrc, int lastBin);
+
 
 // -----------------------------------------------------
 
@@ -1191,6 +1194,7 @@ int main(int argc, char *argv[])
   int flagErrAB_HF[2];
   flagErrAB_HF[0]=-1;
   flagErrAB_HF[1]=-1;
+  int lastLumiBin=-1;
   {
     const int specCountA=4;
     const int specColors[specCountA] = { 1, 2, 3, 4 };
@@ -1202,8 +1206,8 @@ int main(int argc, char *argv[])
 
     std::vector<TH1F*> hV;
     THStack *hs= new THStack("hs","ADCAmplerLS6");
-    cONE->Clear();
-    cONE->cd();
+    cHB->Clear();
+    cHB->cd();
 
     for (int i=0; i<specCountA; i++) {
       if (1) std::cout << "errA_HF test: get histos for i=" << i
@@ -1225,10 +1229,26 @@ int main(int argc, char *argv[])
 	ptext->Draw();
 	continue;
       }
-      TH1F *hERT1= (TH1F*)h1->Clone(Form("ERT1_%d",i));
+      TH1F *hERT1orig= (TH1F*)h1->Clone(Form("ERT1orig_%d",i));
+      hERT1orig->Divide(h1, h0, 1,1, "B");
+
+      if ((lastLumiBin<0) && (i==0)) {
+	for (int ibin=hERT1orig->GetNbinsX(); ibin>=1; ibin--) {
+	  if (hERT1orig->GetBinContent(ibin)==0) lastLumiBin=ibin;
+	  else break;
+	}
+      }
+      TH1F *hERT1=NULL;
+      if (lastLumiBin>1) {
+	if (!copyContents(&hERT1,Form("ERT1_%d",i),"", hERT1orig,lastLumiBin)) {
+	  std::cout << "code failed"<<std::endl;
+	  gSystem->Exit(1);
+	}
+      }
+      else hERT1=hERT1orig;
+
       hERT1->GetXaxis()->SetTitle("<ADCAmpl> per LS HF: black-P1, red-P2,green-M1,blue-M2");
       hV.push_back(hERT1);
-      hERT1->Divide(h1, h0, 1,1, "B");
       hERT1->SetMarkerStyle(20);
       hERT1->SetMarkerSize(0.4);
       hERT1->SetXTitle("<A>(ev.in LS & ch.) - HF P1     -    iLS \b");
@@ -1237,17 +1257,18 @@ int main(int argc, char *argv[])
       hs->Add(hERT1);
       delete h1;
       delete h0;
+      if (hERT1!=hERT1orig) delete hERT1orig;
     }
 
-    hs->Draw("LPE1 nostack"); cONE->Update(); // activate the axes
+    hs->Draw("LPE1 nostack"); cHB->Update(); // activate the axes
     hs->GetXaxis()->SetTitle("<ADCAmpl> per LS HF: black-P1, red-P2,green-M1,blue-M2");
     //hs->GetYaxis()->SetTitle("<ADCAmpl>");
     hs->Draw("LPE1 nostack");
     gPad->SetGridx();
     gPad->SetGridy();
-    cONE->Update();
-    cONE->Print("HistErrA_HF.png");
-    cONE->Clear();
+    cHB->Update();
+    cHB->Print("HistErrA_HF.png");
+    cHB->Clear();
 
     // If we have the expected number of histograms, set the flag
     if (int(hV.size())==specCountA) {
@@ -1282,7 +1303,7 @@ int main(int argc, char *argv[])
       cHB->Divide(2,1);
       cHB->cd(1);
 
-      TH1F *hRate2= NULL;
+      TH1F *hRate2orig= NULL;
       TH2F *h2Cefz6= NULL;
       TString hname1= hnames[2*depth-2][0];
       TString hname0= hnames[2*depth-2][1];
@@ -1304,7 +1325,7 @@ int main(int argc, char *argv[])
 	ptext->Draw();
       }
       else {
-	h2Cefz6= (TH2F*)twod1->Clone("Cefz6");
+	h2Cefz6= (TH2F*)twod1->Clone(Form("Cefz6_%d",depth));
 	h2Cefz6->SetTitle(Form("HF Depth %d \b",depth));
 	h2Cefz6->Divide(twod1,twod0, 1, 1, "B");
 
@@ -1349,9 +1370,19 @@ int main(int argc, char *argv[])
       else {
 	gPad->SetGridy();
 	gPad->SetLogy();
-	hRate2 = (TH1F*)h1->Clone("Rate2");
+	hRate2orig = (TH1F*)h1->Clone(Form("Rate2orig_%d",depth));
+	hRate2orig->Divide(h1,h0, 1, 1, "B");
+
+	TH1F* hRate2=NULL;
+	if (lastLumiBin>1) {
+	  if (!copyContents(&hRate2,Form("Rate2_%d",depth),"",hRate2orig,lastLumiBin)) {
+	    std::cout << "code failed" << std::endl;
+	    gSystem->Exit(1);
+	  }
+	}
+	else hRate2=hRate2orig;
+
 	hRate2->SetTitle(Form("Depth %d \b",depth));
-	hRate2->Divide(h1,h0, 1, 1, "B");
 	hRate2->SetMarkerStyle(20);
 	hRate2->SetMarkerSize(0.8);
 	hRate2->SetXTitle(Form("<ErrorB>(ev.in LS & ch.) - HF depth%d -    iLS \b",depth));
@@ -1361,13 +1392,14 @@ int main(int argc, char *argv[])
 
 	delete h1;
 	delete h0;
+	if (hRate2!=hRate2orig) { delete hRate2orig; hRate2orig=hRate2; }
       }
 
       cHB->Update();
       cHB->Print(Form("HistErrB_HF_%d.png",depth));
       cHB->Clear();
       if (h2Cefz6) delete h2Cefz6;
-      if (hRate2) delete hRate2;
+      if (hRate2orig) delete hRate2orig;
     }
   } // ErrorsB in HF
 
@@ -1970,3 +2002,25 @@ int main(int argc, char *argv[])
 }
 
 
+// ------------------------------------------------------------
+
+int copyContents(TH1F **hDest, TString hname, TString htitle,
+		   const TH1F *hSrc, int lastBin)
+{
+  if (lastBin > hSrc->GetNbinsX()) {
+    std::cout << "copyContents from " << hSrc->GetName() << ": histo has "
+	      << hSrc->GetNbinsX() << " bins, when lastBin=" << lastBin
+	      << " was requested\n";
+    return 0;
+  }
+
+  (*hDest)= new TH1F(hname,htitle,lastBin,0,lastBin);
+  (*hDest)->SetDirectory(0);
+  (*hDest)->SetStats(0);
+
+  for (int ibin=1; ibin<lastBin; ibin++) {
+    (*hDest)->SetBinContent(ibin, hSrc->GetBinContent(ibin));
+    (*hDest)->SetBinError(ibin, hSrc->GetBinError(ibin));
+  }
+  return 1;
+}
