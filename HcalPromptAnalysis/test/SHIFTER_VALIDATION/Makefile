@@ -11,7 +11,7 @@ DEPS= LogEleMapdb.h
 default: RemoteMonitoringGLOBAL.cc.exe RemoteMonitoringMAP_Global.cc.exe
 
 RemoteMonitoringGLOBAL.cc.exe: RemoteMonitoringGLOBAL.cc $(DEPS)
-	c++ $^ ${ROOTINC} ${CFLAGS} -o $@ ${ROOTLIBS}
+	c++ $< ${ROOTINC} ${CFLAGS} -o $@ ${ROOTLIBS}
 
 RemoteMonitoringMAP_Global.cc.exe: RemoteMonitoringMAP_Global.cc $(DEPS)
-	c++ $^ ${ROOTINC} ${CFLAGS} -o $@ ${ROOTLIBS}
+	c++ $< ${ROOTINC} ${CFLAGS} -o $@ ${ROOTLIBS}
