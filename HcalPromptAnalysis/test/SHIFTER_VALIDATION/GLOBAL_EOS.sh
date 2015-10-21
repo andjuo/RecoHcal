@@ -8,8 +8,9 @@ eos='/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select'
 # print usage info
 if [[ "$1" == "" ]]; then
   echo "Usage:"
-  echo "  $0 file [-ignore-file] [-das-cache]"
+  echo "  $0 file [comment] [-ignore-file] [-das-cache]"
   echo "    file  -- a file with run numbers"
+  echo "    comment  -- add a comment line (instead of spaces use '_')"
   echo "    -ignore-file   -- skips production of run html pages. Produces"
   echo "                      only the global page. File name is not needed."
   echo "    -das-cache   -- whether to save DAS information locally for a reuse"
@@ -33,23 +34,28 @@ fi
 
 # Process arguments and set the flags
 fileName=$1
+comment=$2
+if [ ${#comment} -gt 0 ] && [ "${comment:0:1}" == "-" ] ; then comment=""; fi
 ignoreFile=0
 debug=0
 dasCache=0
-DAS_DIR="dir-DAS-info/"
+DAS_DIR="dir-DAS-info"
 
 for a in $@ ; do
     if [ "$a" == "-ignore-file" ] ; then
 	echo " ** file will be ignored"
 	fileName=""
 	ignoreFile=1
-    elif [ "$a" == "-debug" ] ; then
-	echo " ** debug detected"
-	debug=1
     elif [ "$a" == "-das-cache" ] ; then
 	echo " ** DAS cache ${DAS_DIR} enabled"
 	dasCache=1
 	if [ ! -d ${DAS_DIR} ] ; then mkdir ${DAS_DIR}; fi
+    else
+	temp_var=${a/-debug/}
+	if [ ${#a} -gt ${#temp_var} ] ; then
+	    debug=${temp_var}
+	    echo " ** debug detected (debug=${debug})"
+	fi
     fi
 done
 
@@ -93,8 +99,17 @@ if [ ${ok} -eq 0 ] ; then
     echo "errors in the file ${fileName} with run numbers"
     exit 3
 else
-    echo "run numbers in ${fileName} verified ok"
+    if [ ${#fileName} -gt 0 ] ; then
+	echo "run numbers in ${fileName} verified ok"
+    fi
 fi
+
+comment=`echo ${comment} | sed sk\_k\ kg`
+if [ ${#comment} -gt 0 ] ; then
+    echo "comment \"${comment}\" will be added to the pages"
+fi
+
+if [ ${debug} -eq 3 ] ; then exit; fi
 
 
 echo 
@@ -107,7 +122,7 @@ echo -e "list complete\n"
 #processing
 
 for i in ${runList} ; do
-
+break;
 runnumber=$i
 
 # if [[ "$runnumber" > 233890 ]] ; then
@@ -163,18 +178,24 @@ echo "Get list of files in ${HistoDir}"
 
 histoFiles=`${eos} ls $HistoDir | grep root | awk -F '_' '{print $2}' | awk -F '.' '{print $1}'`
 echo -e '\n\nRun numbers on EOS:'
-runList=`echo $histoFiles | tee _runlist_`
-echo "${runList}"
+runListEOS=`echo $histoFiles | tee _runlist_`
+echo "${runListEOS}"
 echo -e "list complete\n"
 
 #making table
 
 # print header to index.html 
-echo `cat header_GLOBAL_EOS.txt`> index_draft.html
+if [ ${#comment} -eq 0 ] ; then
+    echo `cat header_GLOBAL_EOS.txt` > index_draft.html
+else
+    echo `head -n -1 header_GLOBAL_EOS.txt` > index_draft.html
+    echo -e "<td class=\"s1\" align=\"center\">Comment</td>\n</tr>\n" \
+	>> index_draft.html
+fi
 
 #extract run numbers
 k=0
-for i in ${runList} ; do
+for i in ${runListEOS} ; do
  
 #runnumber=$(echo $i | sed -e 's/[^0-9]*//g')
 #runnumber=$(echo $i | awk -F 'run' '{print $2}'| awk -F '.' '{print $1}')
@@ -187,18 +208,20 @@ echo
 echo 'RUN number = '$runnumber
 
 # extract the date of file
+dasInfo=${DAS_DIR}/das_${runnumber}.txt
 got=0
 if [ ${dasCache} -eq 1 ] ; then
     rm -f tmp
-    cp ${DAS_DIR}/das_${runnumber}.txt tmp
-    if [ -s tmp ] ; then
+    if [ -s ${dasInfo} ] ; then
+	cp ${dasInfo} tmp
 	got=1
     else
-	echo "failed to use ${DAS_DIR} contents for ${runnumber}"
+	echo "no ${dasInfo} found. Will use das_client.py"
     fi
 fi
 if [ ${got} -eq 0 ] ; then
     ./das_client.py --query="run=${i} | grep run.beam_e,run.bfield,run.nlumis,run.lhcFill,run.delivered_lumi,run.duration,run.start_time,run.end_time" --limit=0 > tmp
+    if [ ${dasCache} -eq 1 ] ; then cp tmp ${dasInfo}; fi
 fi
 
 #cat tmp
@@ -210,7 +233,6 @@ nL=`cat tmp | awk '{print $3}'`
 Fill=`cat tmp | awk '{print $4}'`
 dLumi=`cat tmp | awk '{print $5}'`
 D=`cat tmp | awk '{print $6}'`
-if [ ${debug} -eq 1 ] ; then cp tmp ${DAS_DIR}/das_${runnumber}.txt; fi
 rm tmp
 
 #echo 'ver 1'
@@ -266,7 +288,14 @@ echo '<td class="s'$raw'" align="center">'$B' T</td>'>> index_draft.html
 echo '<td class="s'$raw'" align="center">'$E' GeV</td>'>> index_draft.html
 #echo '<td class="s'$raw'" align="center">'$dLumi' /nb</td>'>> index_draft.html
 echo '<td class="s'$raw'" align="center">'$Date_obr' /nb</td>'>> index_draft.html
-#echo '<td class="s'$raw'" align="center">'$commentariy'</td>'>> index_draft.html
+if [ ${#comment} -gt 0 ] ; then
+    #echo "runList=${runList}, check ${runnumber}"
+    temp_var=${runList/${runnumber}/}
+    if [ ${#temp_var} -lt ${#runList} ] ; then
+	echo "adding a commentary for this run"
+	echo "<td class=\"s${raw}\" align=\"center\">${comment}</td>" >> index_draft.html
+    fi
+fi
 echo '</tr>'>> index_draft.html
 prev=$i
 
@@ -277,21 +306,30 @@ done
 # print footer to index.html 
 echo `cat footer.txt`>> index_draft.html
 
-cmsStage -f index_draft.html $WebDir/CMT/index.html
-status="$?"
+
+status=0
+if [ ${debug} -gt 0 ] ; then
+    echo "debug=${debug}. No upload to eos"
+    status=-1
+else
+    cmsStage -f index_draft.html $WebDir/CMT/index.html
+    status="$?"
 #rm index_draft.html
+fi
 
 # delete temp files
 
-rm *.root
-rm _runlist_
+if [ ${debug} -eq 0 ] ; then
+    rm -f *.root
+    rm -f _runlist_
+fi
 
-echo "script done"
-
-# check exit code
+# check eos-upload exit code
 if [[ "${status}" == "0" ]]; then
   echo "Successfully uploaded!"
 else
   echo "ERROR: Uploading failed"
   exit 1
 fi
+
+echo "script done"
