@@ -141,6 +141,10 @@ runnumber=$i
     
     #CMT processing
     ./RemoteMonitoringGLOBAL.cc.exe Global_$runnumber.root
+    if [ ! $? -eq 0 ] ; then
+	echo "GLOBAL processing failed"
+	exit 2
+    fi
 
     local_WebDir=dir-CMT-GLOBAL_${runnumber}
     rm -rf ${local_WebDir}
@@ -152,7 +156,7 @@ runnumber=$i
     cp *.png ${local_WebDir}
     cp HELP.html ${local_WebDir}
     files=`cd ${local_WebDir}; ls`
-    echo "CMT files=${files}"
+    #echo "CMT files=${files}"
 
     if [ ${debug} -eq 0 ] ; then
 	cmsMkdir $WebDir/CMT/GLOBAL_$runnumber
@@ -178,6 +182,11 @@ runnumber=$i
 
     #RMT processing
     ./RemoteMonitoringMAP_Global.cc.exe Global_$runnumber.root Global_$runnumber.root
+    if [ ! $? -eq 0 ] ; then
+	echo "MAP_Global processing failed"
+	exit 2
+    fi
+
     local_WebDir=dir-RMT-GLOBAL_${runnumber}
     rm -rf ${local_WebDir}
     if [ ! -d ${local_WebDir} ] ; then mkdir ${local_WebDir}; fi
@@ -188,7 +197,7 @@ runnumber=$i
     cp *.png ${local_WebDir}
     cp HELP.html ${local_WebDir}
     files=`cd ${local_WebDir}; ls`
-    echo "RMT files=${files}"
+    #echo "RMT files=${files}"
 
     if [ ${debug} -eq 0 ] ; then
 	cmsMkdir $WebDir/GlobalRMT/GLOBAL_$runnumber
