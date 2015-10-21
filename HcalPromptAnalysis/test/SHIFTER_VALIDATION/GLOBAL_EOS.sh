@@ -39,7 +39,7 @@ if [ ${#comment} -gt 0 ] && [ "${comment:0:1}" == "-" ] ; then comment=""; fi
 ignoreFile=0
 debug=0
 dasCache=0
-DAS_DIR="dir-DAS-info"
+DAS_DIR="d-DAS-info"
 
 for a in $@ ; do
     if [ "$a" == "-ignore-file" ] ; then
@@ -122,7 +122,6 @@ echo -e "list complete\n"
 #processing
 
 for i in ${runList} ; do
-break;
 runnumber=$i
 
 # if [[ "$runnumber" > 233890 ]] ; then
@@ -131,43 +130,101 @@ runnumber=$i
     echo
     echo  "Run for processing $runnumber"
     echo  "file=root://eoscms//cms/$HistoDir/Global_$runnumber.root"
-    xrdcp root://eoscms//eos/cms/$HistoDir/Global_$runnumber.root Global_$runnumber.root 
+    if [ ! -s Global_${runnumber}.root ] ; then
+	xrdcp root://eoscms//eos/cms/$HistoDir/Global_$runnumber.root Global_$runnumber.root
+	status="$?"
+	if [ ! ${status} -eq 0 ] ; then
+	    echo "failed to get file Global_${runnumber}.root"
+	    exit 2
+	fi
+    fi
     
     #CMT processing
     ./RemoteMonitoringGLOBAL.cc.exe Global_$runnumber.root
-    cmsMkdir $WebDir/CMT/GLOBAL_$runnumber
-    cmsStage -f HELP.html $WebDir/CMT
+
+    local_WebDir=dir-CMT-GLOBAL_${runnumber}
+    rm -rf ${local_WebDir}
+    if [ ! -d ${local_WebDir} ] ; then mkdir ${local_WebDir}; fi
     for j in $(ls -r *.html); do
-       cat $j | sed 's#cms-cpt-software.web.cern.ch\/cms-cpt-software\/General\/Validation\/SVSuite#cms-conddb-dev.cern.ch\/eosweb\/hcal#g'> tmp.html
-       cmsStage -f tmp.html $WebDir/CMT/GLOBAL_$runnumber/$j
-       rm tmp.html
+	cat $j | sed 's#cms-cpt-software.web.cern.ch\/cms-cpt-software\/General\/Validation\/SVSuite#cms-conddb-dev.cern.ch\/eosweb\/hcal#g' \
+	    > ${local_WebDir}/$j
     done
-    for j in $(ls -r *.png); do
-       cmsStage -f $j $WebDir/CMT/GLOBAL_$runnumber
-    done 
-\
+    cp *.png ${local_WebDir}
+    cp HELP.html ${local_WebDir}
+    files=`cd ${local_WebDir}; ls`
+    echo "CMT files=${files}"
+
+    if [ ${debug} -eq 0 ] ; then
+	cmsMkdir $WebDir/CMT/GLOBAL_$runnumber
+	if [ ! $? -eq 0 ] ; then
+	    echo "CMT cmsMkdir failed"
+	    exit 2
+	fi
+	for f in ${files} ; do
+	    echo "cmsStage -f ${local_WebDir}/${f} $WebDir/CMT/GLOBAL_$runnumber/${f}"
+	    cmsStage -f ${local_WebDir}/${f} $WebDir/CMT/GLOBAL_$runnumber/${f}
+	    if [ ! $? -eq 0 ] ; then
+		echo "CMT cmsStage failed for ${f}"
+		exit 2
+	    fi
+	done
+    else
+        # debuging
+	echo "debugging: files are not copied to EOS"
+    fi
+
     rm *.html
     rm *.png    
 
     #RMT processing
     ./RemoteMonitoringMAP_Global.cc.exe Global_$runnumber.root Global_$runnumber.root
-    cmsMkdir $WebDir/GlobalRMT/GLOBAL_$runnumber
-    cmsStage -f HELP.html $WebDir/GlobalRMT
+    local_WebDir=dir-RMT-GLOBAL_${runnumber}
+    rm -rf ${local_WebDir}
+    if [ ! -d ${local_WebDir} ] ; then mkdir ${local_WebDir}; fi
     for j in $(ls -r *.html); do
-       cat $j | sed 's#cms-cpt-software.web.cern.ch\/cms-cpt-software\/General\/Validation\/SVSuite#cms-conddb-dev.cern.ch\/eosweb\/hcal#g'> tmp.html
-       cmsStage -f tmp.html $WebDir/GlobalRMT/GLOBAL_$runnumber/$j
-       rm tmp.html
+	cat $j | sed 's#cms-cpt-software.web.cern.ch\/cms-cpt-software\/General\/Validation\/SVSuite#cms-conddb-dev.cern.ch\/eosweb\/hcal#g' \
+		> ${local_WebDir}/$j
     done
-    for j in $(ls -r *.png); do
-       cmsStage -f $j $WebDir/GlobalRMT/GLOBAL_$runnumber
-    done 
+    cp *.png ${local_WebDir}
+    cp HELP.html ${local_WebDir}
+    files=`cd ${local_WebDir}; ls`
+    echo "RMT files=${files}"
+
+    if [ ${debug} -eq 0 ] ; then
+	cmsMkdir $WebDir/GlobalRMT/GLOBAL_$runnumber
+	if [ ! $? -eq 0 ] ; then
+	    echo "RMT cmsMkdir failed"
+	    exit 2
+	fi
+	for f in ${files} ; do
+	    echo "cmsStage -f ${local_WebDir}/${f} $WebDir/RMT/GLOBAL_$runnumber/${f}"
+	    cmsStage -f ${local_WebDir}/${f} $WebDir/RMT/GLOBAL_$runnumber/${f}
+	    if [ ! $? -eq 0 ] ; then
+		echo "RMT cmsStage failed for ${f}"
+		exit 2
+	    fi
+	done
+    else
+        # debuging
+	echo "debugging: files are not copied to EOS"
+    fi
 
     rm *.html
     rm *.png
-   
+
 #fi
 
 done
+
+if [ ${debug} -eq 2 ] ; then
+    echo "debug=2 skipping web page creation"
+    exit 2
+fi
+
+
+# #  #  # # # # # # # # # # #####
+# Create global web page
+#
 
 echo "Get list of files in ${HistoDir}"
 #cmsLs $HistoDir | grep root | awk  '{print $5}' | awk -F / '{print $10}' > rtmp
