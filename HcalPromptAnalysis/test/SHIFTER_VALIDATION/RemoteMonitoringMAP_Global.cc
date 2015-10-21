@@ -1512,7 +1512,7 @@ int main(int argc, char *argv[])
 
     cHE->cd(2);
     ///////////////////////////////////////
-    if (!h2Ceff) {
+    if (h2Ceff) {
       // TO IDENTIFY: see red bins in eta-phi space (applied cut on Aij: <20 || >3000
       h2Diffe = (TH2F*)h2Ceff->Clone(Form("Diffe_Depth%d_HF",depth));
       h2Diffe->SetTitle(Form("HF Depth %d. Cut avg(ADCAmpl) > 20 \b",depth));
@@ -1616,7 +1616,7 @@ int main(int argc, char *argv[])
 					      "h_RatioOccupancy_HFP" };
       const TString specCaseNames[specCount] = { "HF-", "HF+", "RatioOcc_HFM", "RatioOcc_HFP" };
 
-      for (int iSpec=0; iSpec<=specCount; iSpec++) {
+      for (int iSpec=0; iSpec<specCount; iSpec++) {
 	cPED->cd(iSpec+1);
 
 	TString hName=specHNames[iSpec];
@@ -1670,7 +1670,7 @@ int main(int argc, char *argv[])
 	TString msg= specCaseNames[iSpec];
 	if(nnnmin > 0.) {
 	  cout<< " " << specCaseNames[iSpec] << "    - ncountall/nnnbins/nnnmin = "<<   (float)ncountall/nnnbins/nnnmin    <<endl;
-	  msg.Append(Form("    - ncountall/nnnbins/nnnmin = %f",(float)ncountall/nnnbins/nnnmin ));
+	  msg.Append(Form("    - ncountall/nnnbins/nnnmin = %f (calculated from %d/%d/%d)",(float)ncountall/nnnbins/nnnmin,ncountall,nnnbins,nnnmin ));
 	}
 	else msg.Append(" no warning");
 	specOccMessages.push_back(msg);
@@ -1684,7 +1684,7 @@ int main(int argc, char *argv[])
 	ADCAmplperLS ->SetLineColor(4);
 	//      ADCAmplperLS ->SetMaximum(30.0);
 	//      ADCAmplperLS ->SetMinimum(25.0);
-	ADCAmplperLS->SetXTitle(Form(" #hits vs Phi for  %s  cut:A>20\\b",specCaseNames[iSpec].Data()));
+	ADCAmplperLS->SetXTitle(Form("Hits vs Phi for  %s  cut:A>20 \b",specCaseNames[iSpec].Data()));
 	ADCAmplperLS ->Draw();
       } // iSpec
     }  // twod0 and twod1 are ok
