@@ -1485,6 +1485,7 @@ int main(int argc, char *argv[])
     }
     else {
       h2Ceff = (TH2F*)twod1->Clone(Form("Ceff_HF%d",depth));
+      h2Ceff->SetTitle(Form("HF Depth %d. (No cut) \b",depth));
       h2Ceff->Divide(twod1,twod0, 1, 1, "B");
 
       cHE->cd(1);
@@ -1493,7 +1494,7 @@ int main(int argc, char *argv[])
       gPad->SetLogz();
       h2Ceff->SetMarkerStyle(20);
       h2Ceff->SetMarkerSize(0.4);
-      h2Ceff->GetZaxis()->SetLabelSize(0.08);
+      //h2Ceff->GetZaxis()->SetLabelSize(0.08);
       h2Ceff->SetXTitle("#eta \b");
       h2Ceff->SetYTitle("#phi \b");
       h2Ceff->SetZTitle("h_mapDepth1ADCAmpl_HF \b");
@@ -1507,6 +1508,7 @@ int main(int argc, char *argv[])
     if (h2Ceff) {
       // TO IDENTIFY: see red bins in eta-phi space (applied cut on Aij: <20 || >3000
       h2Diffe = (TH2F*)h2Ceff->Clone(Form("Diffe_Depth%d_HF",depth));
+      h2Diffe->SetTitle(Form("HF Depth %d. Cut avg(ADCAmpl) > 20 \b",depth));
       int nx = h2Ceff->GetXaxis()->GetNbins();
       int ny = h2Ceff->GetYaxis()->GetNbins();
       for (int i=1;i<=nx;i++) {
@@ -1521,7 +1523,7 @@ int main(int argc, char *argv[])
       gPad->SetLogz();
       h2Diffe->SetMarkerStyle(20);
       h2Diffe->SetMarkerSize(0.4);
-      h2Diffe->GetZaxis()->SetLabelSize(0.08);
+      //h2Diffe->GetZaxis()->SetLabelSize(0.08);
       h2Diffe->SetXTitle("#eta \b");
       h2Diffe->SetYTitle("#phi \b");
       h2Diffe->SetZTitle("<ADCAmpl> bigger 20.- HF Depth1 \b");
@@ -1535,6 +1537,7 @@ int main(int argc, char *argv[])
     if (h2Ceff) {
       h1diffADCAmpl = new TH1F(Form("diffADCAmpl_Depth%d_HF",depth),"",
 			       100, -20.,200.);
+      h1diffADCAmpl->SetTitle(Form("HF Depth %d \b",depth));
       int nx = h2Ceff->GetXaxis()->GetNbins();
       int ny = h2Ceff->GetYaxis()->GetNbins();
       for (int i=1;i<=nx;i++) {
