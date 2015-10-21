@@ -20,6 +20,7 @@
 #include "TFile.h"
 #include "TLine.h"
 #include "TGraph.h"
+#include <THStack.h>
 
 using namespace std;
 
@@ -35,7 +36,6 @@ int main(int argc, char *argv[])
     char fname[300];
     sprintf(fname,"%s",argv[1]);
     std::cout<<fname<<std::endl;
-
 
 
 //======================================================================
@@ -1181,6 +1181,156 @@ int main(int argc, char *argv[])
          }// end sub 
 
 
+//======================================================================
+// Special test of errors type A and B in HF
+
+  int flagErrAB_HF[2];
+  flagErrAB_HF[0]=-1;
+  flagErrAB_HF[1]=-1;
+  {
+    const int specCountA=4;
+    const int specColors[specCountA] = { 2, 3, 4, 7 };
+    const TString hnames[specCountA][2] =
+      { { "h_sumADCAmplperLS6_P1", "h_sum0ADCAmplperLS6_P1" },
+	{ "h_sumADCAmplperLS6_P2", "h_sum0ADCAmplperLS6_P2" },
+	{ "h_sumADCAmplperLS6_M1", "h_sum0ADCAmplperLS6_M1" },
+	{ "h_sumADCAmplperLS6_M2", "h_sum0ADCAmplperLS6_M2" } };
+
+    std::vector<TH1F*> hV;
+    THStack *hs= new THStack("hs","");
+    cONE->Clear();
+
+    for (int i=0; i<specCountA; i++) {
+      if (1) std::cout << "errA_HF test: get histos for i=" << i
+		       << " " << hnames[i][0]
+		       << " and " << hnames[i][1] << "\n";
+      TH1F *h1= (TH1F*)hfile->Get(hnames[i][0]);
+      TH1F *h0= (TH1F*)hfile->Get(hnames[i][1]);
+      if (!h1 || !h0) {
+	std::cout << "histograms " << hnames[i][0] << " or " << hnames[i][1]
+		  << " are not available\n";
+	continue;
+      }
+      TH1F *hERT1= (TH1F*)h1->Clone(Form("ERT1_%d",i));
+      hV.push_back(hERT1);
+      hERT1->Divide(h1, h0, 1,1, "B");
+      hERT1->SetMarkerStyle(20);
+      hERT1->SetMarkerSize(0.4);
+      hERT1->SetXTitle("<A>(ev.in LS & ch.) - HF P1     -    iLS \b");
+      hERT1->SetMarkerColor(specColors[i]);
+      hERT1->SetLineColor(0);
+      hs->Add(hERT1);
+      delete h1;
+      delete h0;
+    }
+
+    cONE->cd();
+    hs->Draw("LPE1 nostack");
+    gPad->SetGridx();
+    gPad->SetGridy();
+    cONE->Update();
+    cONE->Print("HistErrA_HF.png");
+    cONE->Clear();
+
+    // If we have the expected number of histograms, set the flag
+    if (int(hV.size())==specCountA) {
+      flagErrAB_HF[0]=0;
+      for (unsigned int i=0; i<hV.size(); i++) {
+	const TH1F* hi= hV[i];
+	for (unsigned int j=1; j<hV.size(); j++) {
+	  const TH1F *hj= hV[j];
+	  for (int ibin=1; ibin<=hi->GetNbinsX(); ibin++) {
+	    if (fabs(hi->GetBinContent(ibin) - hj->GetBinContent(ibin))>2.) {
+	      flagErrAB_HF[0]=1;
+	    }
+	  }
+	}
+      }
+    }
+    // clean-up
+    for (unsigned int i=0; i<hV.size(); i++) delete hV[i];
+  } // ErrorA in HF
+
+  { // errors type B
+    const int specCountB=4;
+    const TString hnames[specCountB][2] =
+      { { "h_2DsumErrorBLS6", "h_2D0sumErrorBLS6" },
+	{ "h_sumErrorBperLS6", "h_sum0ErrorBperLS6" },
+	{ "h_2DsumErrorBLS7", "h_2D0sumErrorBLS7" },
+	{ "h_sumErrorBperLS7", "h_sum0ErrorBperLS7" } };
+
+    cHE->Clear();
+    cHE->Divide(2,1);
+
+    for (int depth=1; depth<=2; depth++) {
+      TH1F *hRate2= NULL;
+      TH2F *h2Cefz6= NULL;
+      TH2F *twod1= (TH2F*)hfile->Get(hnames[2*depth-2][0]);
+      TH2F *twod0= (TH2F*)hfile->Get(hnames[2*depth-2][1]);
+      if (1) std::cout << "errB_HF depth=" << depth << ". get 2D histos "
+		       << hnames[2*depth-2][0] << " and "
+		       << hnames[2*depth-2][1] << "\n";
+      if (!twod1 || !twod0) {
+	std::cout << "failed to get either " << hnames[2*depth-2][0]
+		  << " or " << hnames[2*depth-2][1] << "\n";
+      }
+      else {
+	h2Cefz6= (TH2F*)twod1->Clone("Cefz6");
+	h2Cefz6->Divide(twod1,twod0, 1, 1, "B");
+
+	cHE->cd(1);
+	gPad->SetGridy();
+	gPad->SetGridx();
+	gPad->SetLogz();
+	h2Cefz6->SetMarkerStyle(20);
+	h2Cefz6->SetMarkerSize(0.4);
+	h2Cefz6->GetZaxis()->SetLabelSize(0.08);
+	h2Cefz6->SetXTitle("#eta \b");
+	h2Cefz6->SetYTitle("#phi \b");
+	h2Cefz6->SetZTitle(Form("<ErrorB>  - HF Depth%d \b",depth));
+	h2Cefz6->SetMarkerColor(2);
+	h2Cefz6->SetLineColor(2);
+	h2Cefz6->Draw("COLZ");
+
+	delete twod1;
+	delete twod0;
+      }
+
+      TH1F *h1= (TH1F*)hfile->Get(hnames[2*depth-1][0]);
+      TH1F *h0= (TH1F*)hfile->Get(hnames[2*depth-1][1]);
+      if (1) std::cout << "errB_HF depth=" << depth << ". get 2D histos "
+		       << hnames[2*depth-1][0] << " and "
+		       << hnames[2*depth-1][1] << "\n";
+      if (!h1 || !h0) {
+	std::cout << "could not get errB_HF histos: either "
+		  << hnames[2*depth-1][0] << " or "
+		  << hnames[2*depth-1][1] << "\n";
+      }
+      else {
+	cHE->cd(2);
+	gPad->SetGridy();
+	gPad->SetLogy();
+	hRate2 = (TH1F*)h1->Clone("Rate2");
+	hRate2->Divide(h1,h0, 1, 1, "B");
+	hRate2->SetMarkerStyle(20);
+	hRate2->SetMarkerSize(0.8);
+	hRate2->SetXTitle(Form("<ErrorB>(ev.in LS & ch.) - HF depth%d -    iLS \b",depth));
+	hRate2->SetMarkerColor(2);
+	hRate2->SetLineColor(0);
+	hRate2->Draw("Error");
+
+	delete h1;
+	delete h0;
+      }
+
+      cHE->Update();
+      cHE->Print(Form("HistErrB_HF_%d.png",depth));
+      cHE->Clear();
+      if (h2Cefz6) delete h2Cefz6;
+      if (hRate2) delete hRate2;
+    }
+  } // ErrorsB in HF
+
 
 
 //======================================================================
@@ -1189,7 +1339,7 @@ int main(int argc, char *argv[])
   int ind = 0; 
   ofstream htmlFile;
   for (int test=0;test<=5;test++) { //Test: 0,   
-      for (int sub=1;sub<=4;sub++) {  //Subdetector: 1-HB, 2-HE, 3-HF, 4-HO
+      for (int sub=1;sub<=4;sub++) {  //Subdetector: 1-HB, 2-HE, 3-HO, 4-HF
            
            if (test==0){
 	      if (sub==1) {htmlFile.open("HB_CapID.html");}
@@ -1449,7 +1599,29 @@ int main(int argc, char *argv[])
                   if (sub==3) htmlFile << " <img src=\"HistTmaxHO.png\" />" << std::endl; 
                   if (sub==4) htmlFile << " <img src=\"HistTmaxHF.png\" />" << std::endl;
               }	     	    	      
-              htmlFile << "<br>"<< std::endl;            
+              htmlFile << "<br>"<< std::endl;
+
+	      // Special section for the HF
+	      int flagSpecHF=0;
+	      if ((test==1) && (sub==4)) {
+		flagSpecHF+=1;
+		htmlFile << "<h2> 4. Error type A & B</h2>\n";
+		htmlFile << "<h2> 4a. Error type A</h2>\n";
+		htmlFile << "<h3>Max difference between the dependencies should be &gt;2 (early plots only for confirmation).</h3>/n";
+		htmlFile << " <img src=\"HistErrA_HF.png\" />\n";
+		htmlFile << "<br>\n";
+		htmlFile << "<h2> 4b. Error type B\n";
+		htmlFile << "<h3>Error B if the digi-collection size !=4. (Usually, proportion of events affected by errors-B per LS is too low<br>-&gt;do we need to certify whole LSs as BAD)</h3>\n";
+		htmlFile << " <img src=\"HistErrB_HF_1.png\" />\n<br>\n";
+		htmlFile << " <img src=\"HistErrB_HF_2.png\" />\n<br>\n";
+		if (flagErrAB_HF[0]==-1) htmlFile<<"test was not possible\n";
+		else if (flagErrAB_HF[0]==0) htmlFile<<"test passed\n";
+		else if (flagErrAB_HF[0]==1) htmlFile<<"<font color=\"red\">test failed</font>\n";
+		else htmlFile<<"auto-interpretation is not available\n";
+		htmlFile << "<br>\n";
+	      }
+
+	      // Continue with common sections
               if (sub==1) { 
 	          htmlFile << "<h2> 4.Lumisection Status for HB </h2>"<< std::endl;
 	          htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: <td class=\"s6\" align=\"center\">"<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2). </td></h3>"<< std::endl;
@@ -1459,7 +1631,7 @@ int main(int argc, char *argv[])
 		  htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][1]<<" (Depth1), "<<Cut0[test][sub][2]<<" (Depth2), "<<Cut0[test][sub][3]<<" (Depth3). </h3>"<< std::endl;
               }
 	      if (sub==3) {
-	         htmlFile << "<h2> 4.Lumisection Status for HO </h2>"<< std::endl;
+		htmlFile << Form("<h2> %d.Lumisection Status for HO </h2>",4+flagSpecHF)<< std::endl;
 		 htmlFile << "<h3> Legends: Red boxes correspond BAD LS selected with following cuts: "<<Cut0[test][sub][4]<<" (Depth4). </h3>"<< std::endl;
 	      }
               if (sub==4) {

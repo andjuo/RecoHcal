@@ -8,47 +8,94 @@ eos='/afs/cern.ch/project/eos/installation/0.3.84-aquamarine/bin/eos.select'
 # print usage info
 if [[ "$1" == "" ]]; then
   echo "Usage:"
-  echo "  $0 [file] [comment]"
-  echo "    [file] - file with run numbers"
-  echo "example: ./GLOBAL.sh Run_List.txt TestRuns"
-  exit
+  echo "  $0 file [-ignore-file] [-das-cache]"
+  echo "    file  -- a file with run numbers"
+  echo "    -ignore-file   -- skips production of run html pages. Produces"
+  echo "                      only the global page. File name is not needed."
+  echo "    -das-cache   -- whether to save DAS information locally for a reuse"
+  echo
+  echo "example: ./GLOBAL.sh Run_List.txt"
+  exit 1
 fi
 
 cmsenv 2>/dev/null
 if [ $? == 0 ] ; then
     eval `scramv1 runtime -sh`
 fi
-echo "using eos command `ls ${eos}`"
+temp_var=`ls ${eos}`
+status="$?"
+echo "using eos command <${temp_var}>"
+if [ ! ${status} -eq 0 ] ; then
+    echo "failed to find eos command"
+    # exit 1
+fi
 
 
+# Process arguments and set the flags
+fileName=$1
+ignoreFile=0
 debug=0
-DEBUG_DIR="dir-debug/"
-if [ "$1" == "-debug2" ] ; then
-    #echo "-debug2 detected"
-    debug=2
-    shift 1
-elif [ "$1" == "-debug" ] ; then
-    #echo "-debug detected"
-    debug=1
-    #rm -rf ${DEBUG_DIR}/*
-    if [ ! -d ${DEBUG_DIR} ] ; then mkdir ${DEBUG_DIR}; fi
-    shift 1
-fi
-if [ ${debug} -gt 0 ] ; then
-    echo -e "\n\tDEBUG MODE=${debug} detected\n"
-fi
+dasCache=0
+DAS_DIR="dir-DAS-info/"
 
+for a in $@ ; do
+    if [ "$a" == "-ignore-file" ] ; then
+	echo " ** file will be ignored"
+	fileName=""
+	ignoreFile=1
+    elif [ "$a" == "-debug" ] ; then
+	echo " ** debug detected"
+	debug=1
+    elif [ "$a" == "-das-cache" ] ; then
+	echo " ** DAS cache ${DAS_DIR} enabled"
+	dasCache=1
+	if [ ! -d ${DAS_DIR} ] ; then mkdir ${DAS_DIR}; fi
+    fi
+done
+
+# Obtain the runList from a file, if needed
 runList=""
-if [ ${#1} -gt 0 ] ; then
-  if [ -s $1 ] ; then
-      runList=`cat $1`
+if [ ${#fileName} -gt 0 ] ; then
+  if [ -s ${fileName} ] ; then
+      runList=`cat ${fileName}`
   else
-      echo "<$1> does not seem to be a valid file"
+      echo "<${fileName}> does not seem to be a valid file"
       exit 2
   fi
 else
-    echo " no file provided"
+    if [ ${ignoreFile} -eq 0 ] ; then
+	echo " ! no file provided"
+    fi
+    echo " ! will produce only the global html page"
 fi
+
+
+# Check the runList and correct the correctables
+# Replace ',' and ';' by empty spaces
+runList=`echo "${runList}" | sed 'sk,k\ kg' | sed 'sk;k\ kg'`
+ok=1
+for r in ${runList} ; do
+    if [ ! ${#r} -eq 6 ] ; then
+	echo "run numbers are expected to be of length 6. Check <$r>"
+	ok=0
+    fi
+    debug_loc=0
+    if [ "$r" -eq "$r" ] 2>/dev/null ; then
+	if [ ${debug_loc} -eq 1 ] ; then echo "run variable <$r> is a number (ok)"; fi
+    else
+	echo "error: run variable <$r> is not an integer number"
+	ok=0
+    fi
+done
+
+echo "Tested `wc -w <<< "${runList}"` runs from file ${fileName}"
+if [ ${ok} -eq 0 ] ; then
+    echo "errors in the file ${fileName} with run numbers"
+    exit 3
+else
+    echo "run numbers in ${fileName} verified ok"
+fi
+
 
 echo 
 echo 
@@ -141,13 +188,13 @@ echo 'RUN number = '$runnumber
 
 # extract the date of file
 got=0
-if [ ${debug} -eq 2 ] ; then
+if [ ${dasCache} -eq 1 ] ; then
     rm -f tmp
-    cp ${DEBUG_DIR}/das_${runnumber}.txt tmp
+    cp ${DAS_DIR}/das_${runnumber}.txt tmp
     if [ -s tmp ] ; then
 	got=1
     else
-	echo "failed to use ${DEBUG_DIR} contents for ${runnumber}"
+	echo "failed to use ${DAS_DIR} contents for ${runnumber}"
     fi
 fi
 if [ ${got} -eq 0 ] ; then
@@ -163,7 +210,7 @@ nL=`cat tmp | awk '{print $3}'`
 Fill=`cat tmp | awk '{print $4}'`
 dLumi=`cat tmp | awk '{print $5}'`
 D=`cat tmp | awk '{print $6}'`
-if [ ${debug} -eq 1 ] ; then cp tmp ${DEBUG_DIR}/das_${runnumber}.txt; fi
+if [ ${debug} -eq 1 ] ; then cp tmp ${DAS_DIR}/das_${runnumber}.txt; fi
 rm tmp
 
 #echo 'ver 1'
