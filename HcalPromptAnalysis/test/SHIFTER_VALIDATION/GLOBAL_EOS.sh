@@ -32,6 +32,12 @@ if [ ! ${status} -eq 0 ] ; then
 fi
 
 
+# create log directory
+LOG_DIR="dir-Logs"
+if [ ! -d ${LOG_DIR} ] ; then mkdir ${LOG_DIR}; fi
+rm -f ${LOG_DIR}/*
+
+
 # Process arguments and set the flags
 fileName=$1
 comment=$2
@@ -122,7 +128,10 @@ echo -e "list complete\n"
 #processing
 
 for i in ${runList} ; do
-runnumber=$i
+    runnumber=$i
+
+    logFile="${LOG_DIR}/log_${runnumber}.out"
+    rm -f ${logFile}
 
 # if [[ "$runnumber" > 233890 ]] ; then
     echo 
@@ -140,11 +149,18 @@ runnumber=$i
     fi
     
     #CMT processing
-    ./RemoteMonitoringGLOBAL.cc.exe Global_$runnumber.root
+    echo -e "\nRemoteMonitoringGLOBAL\n" >> ${logFile}
+    ./RemoteMonitoringGLOBAL.cc.exe Global_$runnumber.root 2>&1 | tee -a ${logFile}
     if [ ! $? -eq 0 ] ; then
 	echo "GLOBAL processing failed"
 	exit 2
     fi
+
+    if [ ! -s HELP.html ] ; then
+	echo "GLOBAL failure was not detected. HELP.html is missing"
+	exit 2
+    fi
+
 
     local_WebDir=dir-CMT-GLOBAL_${runnumber}
     rm -rf ${local_WebDir}
@@ -181,9 +197,15 @@ runnumber=$i
     rm *.png    
 
     #RMT processing
-    ./RemoteMonitoringMAP_Global.cc.exe Global_$runnumber.root Global_$runnumber.root
+    echo -e "\nRemoteMonitoringMAP_Global\n" >> ${logFile}
+    ./RemoteMonitoringMAP_Global.cc.exe Global_$runnumber.root Global_$runnumber.root 2>&1 | tee -a ${logFile}
     if [ ! $? -eq 0 ] ; then
 	echo "MAP_Global processing failed"
+	exit 2
+    fi
+
+    if [ ! -s HELP.html ] ; then
+	echo "MAP_Global failure was not detected. HELP.html is missing"
 	exit 2
     fi
 
@@ -200,7 +222,7 @@ runnumber=$i
     #echo "RMT files=${files}"
 
     if [ ${debug} -eq 0 ] ; then
-	cmsMkdir $WebDir/GlobalRMT/GLOBAL_$runnumber
+	cmsMkdir $WebDir/RMT/GLOBAL_$runnumber
 	if [ ! $? -eq 0 ] ; then
 	    echo "RMT cmsMkdir failed"
 	    exit 2
