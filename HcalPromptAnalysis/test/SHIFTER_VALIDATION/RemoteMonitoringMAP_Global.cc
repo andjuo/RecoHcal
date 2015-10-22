@@ -24,6 +24,7 @@
 #include <TPaveText.h>
 
 using namespace std;
+//inline void HERE(const char *msg) { std::cout << msg << std::endl; }
 
 
 int main(int argc, char *argv[])
@@ -1695,16 +1696,18 @@ int main(int argc, char *argv[])
 
     // clean-up
     if (twod1) delete twod1;
-    if (twod0) delete twod0;
+    //if (twod0) delete twod0;// do not delete - sometimes causes trouble later
     for (unsigned int i=0; i<hV.size(); i++) {
-      delete hV[i];
+      if (hV[i]) delete hV[i];
     }
   } // dummy loop on depth
 
+  std::cout << "Special errors done" << std::endl;
 
 
 //======================================================================
 /// Prepare maps of good/bad channels:
+
 
     TH2F *Map_ALL = new TH2F("Map_All","Map_all", 82, -41, 40, 72, 0, 71);             
     int nx = Map_ALL->GetXaxis()->GetNbins();
@@ -1723,7 +1726,7 @@ int main(int argc, char *argv[])
     int flag_W = 0;
     int flag_B = 0;
     int flag_P = 0;
-    
+
     for (int i=1;i<=nx;i++) {  //Eta
        for (int j=1;j<=ny;j++) {	// Phi  
           for (int sub=1;sub<=4;sub++) {  //Subdetector: 1-HB, 2-HE, 3-HO, 4-HF
@@ -1734,7 +1737,7 @@ int main(int argc, char *argv[])
 	     }	
           }
        }
-    }   	  
+    }
 
     for (int i=1;i<=nx;i++) {  //Eta
        for (int j=1;j<=ny;j++) {	// Phi  
@@ -1851,9 +1854,9 @@ int main(int argc, char *argv[])
 	  }//end Sub 	  	  
        }//end Phi
     }//end Eta 
-                   
+
 // subdet maps
-  for (int sub=1;sub<=4;sub++) {  //Subdetector: 1-HB, 2-HE, 3-HF, 4-HO
+  for (int sub=1;sub<=4;sub++) {  //Subdetector: 1-HB, 2-HE, 3-HO, 4-HF
        if (sub==1) cHB->Divide(2,1);
        if (sub==2) cHE->Divide(3,1);
        if (sub==3) cONE->Divide(1,1);
@@ -1889,7 +1892,7 @@ int main(int argc, char *argv[])
        if (sub==3) {cONE->Print("MAPHO.png"); cONE->Clear();}
        if (sub==4) {cHB->Print("MAPHF.png"); cHB->Clear();} 
   }
-  
+
 // ALL SubDet  
   gStyle->SetOptTitle(0);
   TCanvas *cmain = new TCanvas("cmain","MAP",800,800);
