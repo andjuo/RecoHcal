@@ -1237,6 +1237,8 @@ int main(int argc, char *argv[])
 	  if (hERT1orig->GetBinContent(ibin)==0) lastLumiBin=ibin;
 	  else break;
 	}
+	lastLumiBin+=3; // show more bins
+	if (lastLumiBin >= hERT1orig->GetNbinsX()) lastLumiBin=-1;
       }
       TH1F *hERT1=NULL;
       if (lastLumiBin>1) {
@@ -2018,9 +2020,11 @@ int copyContents(TH1F **hDest, TString hname, TString htitle,
   (*hDest)->SetDirectory(0);
   (*hDest)->SetStats(0);
 
-  for (int ibin=1; ibin<lastBin; ibin++) {
+  for (int ibin=1; ibin<=lastBin; ibin++) {
     (*hDest)->SetBinContent(ibin, hSrc->GetBinContent(ibin));
     (*hDest)->SetBinError(ibin, hSrc->GetBinError(ibin));
   }
   return 1;
 }
+
+// ------------------------------------------------------------
